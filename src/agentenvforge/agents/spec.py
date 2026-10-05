@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import importlib
 import shlex
+import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -58,10 +59,16 @@ class CommandAgentSpec(_AgentSpecBase):
 
 
 class PythonAgentSpec(_AgentSpecBase):
-    """A host-side adapter loaded from ``module:callable``."""
+    """A host-side adapter loaded from ``module:callable``.
+
+    ``path`` (relative to the spec file) is searched for the module first, so an agent
+    can live next to its spec without being installed. Loading an adapter executes its
+    code on the host: only run agent specs you trust (task files can never do this).
+    """
 
     type: Literal["python"]
     adapter: str = Field(pattern=r"^[A-Za-z_][\w.]*:[A-Za-z_]\w*$")
+    path: RelativePath | None = None
     options: dict[str, JSONScalar] = Field(default_factory=dict)
 
 
@@ -128,7 +135,7 @@ def _build(
     if isinstance(spec, CommandAgentSpec):
         return _build_command_agent(spec, base_dir, environment, source)
     if isinstance(spec, PythonAgentSpec):
-        return _build_python_agent(spec, source)
+        return _build_python_agent(spec, base_dir, source)
     if spec.type == "manual":
         return ManualAgent(write=environment.write, wait_for_confirmation=environment.prompt)
     return NoopAgent()
@@ -175,12 +182,27 @@ def _build_command_agent(
     )
 
 
-def _build_python_agent(spec: PythonAgentSpec, source: str) -> AgentAdapter:
+def _build_python_agent(spec: PythonAgentSpec, base_dir: Path, source: str) -> AgentAdapter:
     module_name, attribute = spec.adapter.split(":", maxsplit=1)
+    if spec.path is not None:
+        search_dir = (base_dir / spec.path).resolve()
+        if not search_dir.is_relative_to(base_dir.resolve()) or not search_dir.is_dir():
+            raise TaskValidationError(
+                source,
+                [
+                    ValidationIssue(
+                        field="path",
+                        reason="must be an existing directory inside the spec directory",
+                        received=spec.path,
+                    )
+                ],
+            )
+        if str(search_dir) not in sys.path:
+            sys.path.insert(0, str(search_dir))
     try:
         factory = getattr(importlib.import_module(module_name), attribute)
         adapter = factory(**spec.options)
-    except (ImportError, AttributeError, TypeError) as error:
+    except (ImportError, AttributeError, TypeError, ValueError) as error:
         raise TaskValidationError(
             source,
             [

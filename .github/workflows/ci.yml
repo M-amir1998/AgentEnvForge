@@ -60,7 +60,7 @@ jobs:
       - run: uv run agentenv doctor
       - run: uv run pytest tests/integration tests/e2e -m docker
       - name: No orphaned sandboxes
-        run: test -z "$(docker ps -aq --filter label=io.agentenvforge.managed=true)"
+        run: test -z "$(docker ps -aq --filter label=io.agentenvforge.run-id)"
 
   package:
     name: Build package

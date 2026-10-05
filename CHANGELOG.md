@@ -8,6 +8,21 @@ All notable changes are documented here. The format follows
 
 ### Added
 
+- Real LLM coding agent on local Ollama models (`examples/agents/ollama`): host-side tool
+  loop, native and text tool-call parsing, transcripts and token statistics; plus specs for
+  qwen2.5-coder 1.5b/3b/7b and a first experiment report.
+- Easy example task `examples/off-by-one`.
+- `python` agent specs accept `path:` to load an adapter that lives next to its spec.
+- `agentenv run --agent-timeout` overrides the agent time budget; recorded in the manifest.
+
+### Fixed
+
+- Sandboxes are now identified by the run-id label. Images built by AgentEnvForge no longer
+  carry the container `managed` label, which Docker copied onto unrelated containers started
+  from those images, so `agentenv cleanup` could have removed them.
+
+### Initial slice
+
 - Versioned task specification (schema v1) with three-pass validation, actionable
   `field / reason / received` errors, duplicate-key and duplicate-ID detection, and a
   generated JSON Schema (`schemas/task-v1.schema.json`).

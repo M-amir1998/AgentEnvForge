@@ -98,13 +98,15 @@ ignore = [
 "tests/**" = ["S101", "S105", "S108", "PLR2004", "T20", "PLC0415"]
 "examples/**" = ["T20", "S101", "INP001", "N818", "S603", "BLE001"]  # incl. buggy code
 "scripts/**" = ["T20"]
-"src/agentenvforge/cli/**" = ["PLR0912", "B008"]
+"src/agentenvforge/cli/**" = ["PLR0912", "PLR0917", "B008"]  # Typer: one parameter per option
 
 # ---------------------------------------------------------------- mypy
 [tool.mypy]
 python_version = "3.12"
 strict = true
-files = ["src", "tests"]
+# The example Ollama agent is type-checked too; tests import it by module name.
+files = ["src", "tests", "examples/agents/ollama"]
+mypy_path = "examples/agents/ollama"
 plugins = ["pydantic.mypy"]
 warn_unreachable = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
@@ -117,6 +119,7 @@ disallow_untyped_decorators = false
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
+pythonpath = ["examples/agents/ollama"]
 addopts = ["-ra", "--strict-markers", "--strict-config"]
 markers = [
     "docker: requires a reachable Docker daemon (skipped otherwise)",
