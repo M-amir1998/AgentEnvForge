@@ -230,6 +230,14 @@ def run(
     keep_workspace: Annotated[
         bool, typer.Option(help="Keep host working directories for debugging.")
     ] = False,
+    agent_timeout: Annotated[
+        int | None,
+        typer.Option(
+            min=1,
+            max=24 * 60 * 60,
+            help="Override the task's agent time budget in seconds (recorded in the manifest).",
+        ),
+    ] = None,
 ) -> None:
     """Execute a task with an agent: sandbox, agent, grading, artifacts, cleanup."""
     settings = _state(context).settings
@@ -253,6 +261,7 @@ def run(
                 agent=adapter,
                 secrets=secrets,
                 keep_workspace=keep_workspace or settings.keep_workspace,
+                agent_timeout_seconds=agent_timeout,
             )
         )
         render.render_run_result(console, result, services.artifacts.location(result.run_id))

@@ -91,6 +91,9 @@ class RunRequest:
     secrets: tuple[str, ...] = ()
     """Secret values to redact from everything recorded about the run."""
     keep_workspace: bool = False
+    agent_timeout_seconds: int | None = None
+    """Replaces the task's ``timeouts.agent_seconds`` (e.g. for slow local models).
+    Recorded in the manifest's ``overrides``, because it changes the evaluation conditions."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -195,6 +198,11 @@ class RunOrchestrator:
             task_definition_hash=task.definition_hash,
             task_definition=task.spec.model_dump(mode="json"),
             agent=request.agent.name,
+            overrides=(
+                {"timeouts.agent_seconds": request.agent_timeout_seconds}
+                if request.agent_timeout_seconds is not None
+                else {}
+            ),
         )
         self._repository.create_run(
             NewRun(
@@ -412,7 +420,7 @@ class RunOrchestrator:
     def _stage_run_agent(self, run: _ActiveRun) -> None:
         if run.agent_sandbox is None:
             raise RuntimeError("agent sandbox must be running before the agent starts")
-        budget = float(run.task.spec.timeouts.agent_seconds)
+        budget = float(run.request.agent_timeout_seconds or run.task.spec.timeouts.agent_seconds)
         session = self._session(run, run.agent_sandbox, timeout_seconds=budget, role="agent")
         agent = run.request.agent
         context = AgentContext(

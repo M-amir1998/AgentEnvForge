@@ -1,0 +1,45 @@
+# An easy task: a one-character off-by-one bug that the visible test exposes directly.
+# Used next to examples/basic (harder: three interacting bugs, two only caught by hidden
+# tests) to see where small models stop coping.
+schema_version: "1"
+
+id: moving-average-off-by-one
+name: Fix the off-by-one error in moving_average
+tags: [python, bug-fix, easy]
+
+instructions: |
+  `stats.moving_average` drops the last window: `moving_average([1, 2, 3, 4], 2)` should
+  return `[1.5, 2.5, 3.5]` but returns `[1.5, 2.5]`. Fix `stats/window.py` without
+  changing its signature. Run the tests with `python -m pytest -q`.
+
+source:
+  type: local
+  path: project
+
+environment:
+  dockerfile: environment/Dockerfile
+  variables:
+    PYTHONDONTWRITEBYTECODE: "1"
+
+resources:
+  cpus: 1
+  memory_mb: 512
+  pids_limit: 256
+
+timeouts:
+  agent_seconds: 300
+  command_seconds: 120
+  grader_seconds: 120
+
+grading:
+  assets: grader
+  protected_paths: [tests]
+  graders:
+    - type: pytest
+      name: hidden-tests
+      paths: [/grader/tests]
+      args: [-q]
+    - type: pytest
+      name: visible-tests
+      paths: [tests]
+      args: [-q]

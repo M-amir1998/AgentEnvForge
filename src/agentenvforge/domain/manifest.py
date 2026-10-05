@@ -58,3 +58,5 @@ class RunManifest(BaseModel):
     source: SourceProvenance | None = None
     image: ImageProvenance | None = None
     grader_assets_hash: str | None = None
+    overrides: dict[str, int | float | str | bool] = {}
+    """Run-time deviations from the task definition (e.g. a longer agent time budget)."""

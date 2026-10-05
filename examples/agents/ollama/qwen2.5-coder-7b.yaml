@@ -1,0 +1,13 @@
+# Real LLM agent: qwen2.5-coder:7b served by a local Ollama (`ollama pull qwen2.5-coder:7b`).
+# The agent loop runs on the host; only its actions reach the (offline) sandbox.
+schema_version: "1"
+type: python
+name: qwen2.5-coder-7b
+adapter: ollama_agent:build
+path: .
+options:
+  model: qwen2.5-coder:7b
+  max_steps: 30
+  num_ctx: 12288
+  temperature: 0
+  seed: 42
