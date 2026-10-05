@@ -1,0 +1,74 @@
+# A complete, self-contained AgentEnvForge task.
+#
+#   agentenv task validate examples/basic/task.yaml
+#   agentenv run examples/basic/task.yaml --agent examples/basic/agents/reference.yaml
+#   agentenv run examples/basic/task.yaml --agent noop      # baseline: must FAIL grading
+#
+# Layout (host paths are relative to this file):
+#   project/      the buggy repository the agent works on (copied to /workspace)
+#   environment/  Dockerfile for the sandbox image (Python + pinned pytest)
+#   grader/       hidden tests - only ever copied into the grading sandbox
+#   reference/    the reference fix, for maintainers - never copied into any sandbox
+#   agents/       a scripted reference agent used by the end-to-end test
+
+schema_version: "1"
+
+id: ledger-transaction-rollback
+name: Fix transaction rollback in the ledger store
+description: >
+  Nested transactions in an in-memory store do not roll back correctly.
+tags: [python, bug-fix, transactions]
+
+instructions: |
+  The `ledger` package in this repository contains `Store`, an in-memory key-value
+  store with a `transaction()` context manager, and a `transfer()` function built on it.
+
+  Transactions are supposed to be atomic: if the block raises, every change made inside
+  the block must be undone and the exception must propagate to the caller. Transactions
+  can be nested; rolling back an inner transaction must only undo the inner block.
+
+  Users report that failed transfers are silently ignored and that rollbacks do not
+  restore the previous state correctly. Fix `ledger/store.py` without changing the
+  public API. The existing tests in `tests/` can be run with `python -m pytest -q`.
+
+source:
+  type: local
+  path: project
+
+environment:
+  dockerfile: environment/Dockerfile
+  workspace: /workspace
+  user: "1000:1000"
+  variables:
+    PYTHONDONTWRITEBYTECODE: "1"
+
+resources:
+  cpus: 1
+  memory_mb: 512
+  pids_limit: 256
+
+timeouts:
+  build_seconds: 600
+  agent_seconds: 300
+  command_seconds: 120
+  grader_seconds: 120
+
+network:
+  enabled: false
+
+grading:
+  assets: grader            # copied to /grader in the grading sandbox only
+  protected_paths: [tests]  # restored to their original content before grading
+  aggregation: all
+  graders:
+    - type: pytest
+      name: hidden-tests
+      paths: [/grader/tests]
+      args: [-q]
+    - type: pytest
+      name: visible-tests
+      paths: [tests]
+      args: [-q]
+
+artifacts:
+  include: ["ledger/**/*.py"]
