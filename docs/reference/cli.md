@@ -12,6 +12,7 @@ Run `agentenv <command> --help` for full options. Global options (before the com
 | `agentenv task schema` | print the JSON Schema of the task format |
 | `agentenv run TASK --agent SPEC\|manual\|noop` | execute a run with an agent spec file or built-in agent |
 | `agentenv run TASK --agent-command "CMD"` | execute with an inline in-sandbox command agent |
+| `agentenv run ... --agent-timeout SECONDS` | override the task's agent time budget (recorded in the manifest's `overrides`) |
 | `agentenv runs list [--task ID] [--status S] [--limit N]` | recent runs |
 | `agentenv runs show RUN_ID [--events]` | result, timings, provenance, optional event log |
 | `agentenv runs events RUN_ID` | event log |

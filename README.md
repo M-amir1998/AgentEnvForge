@@ -62,6 +62,14 @@ Score:  1.000
   - visible-tests: pass 2/2 tests passed
 ```
 
+Run a **real LLM agent** on your laptop with a local Ollama model (CPU is enough; see
+[examples/agents/ollama](examples/agents/ollama/README.md)):
+
+```bash
+ollama pull qwen2.5-coder:7b
+uv run agentenv run examples/off-by-one/task.yaml     --agent examples/agents/ollama/qwen2.5-coder-7b.yaml --agent-timeout 1500
+```
+
 The same task with an agent that does nothing **fails** grading (`--agent noop`, exit
 code 1), which shows the task really discriminates. Then inspect what happened:
 
@@ -113,6 +121,7 @@ Read more: [architecture overview](docs/architecture/overview.md) ·
 | Docker sandbox: CPU, memory (no swap), PIDs, network off by default, non-root, caps dropped | **implemented** |
 | Per-command and total-agent timeouts; build/start/grader/cleanup timeouts | **implemented** |
 | Agents: `command` (in-sandbox program), `python` (host-side adapter), `manual`, `noop` | **implemented** |
+| Real LLM agent example on local Ollama models, no GPU or API key ([results](docs/experiments/2026-10-small-local-models.md)) | **experimental** |
 | Graders: `pytest` (JUnit-parsed), `command`, composite (`all` / `weighted`) | **implemented** |
 | Separate grading sandbox, hidden assets, protected-path restoration | **implemented** |
 | Run state machine, failure taxonomy, structured events, JSON logs, secret redaction | **implemented** |

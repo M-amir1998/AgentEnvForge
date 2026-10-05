@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-10-05 (v0.1.0.dev0). Keep this file in sync with reality in every PR.
+Last updated: 2026-10-05 (v0.1.0.dev0, after the local-LLM agent work). Keep this file in sync with reality in every PR.
 
 ## Implemented (tested)
 
@@ -17,8 +17,12 @@ Last updated: 2026-10-05 (v0.1.0.dev0). Keep this file in sync with reality in e
 - Events, JSON/text logging with run context, per-run log files, secret redaction.
 - SQLite repository with migrations; local artifact store; manifest; patch capture.
 - CLI: `version`, `doctor`, `task validate|inspect|schema`, `run`, `runs list|show|events|artifacts`, `cleanup`.
-- Example task `examples/basic` with reference agent, hidden tests and reference patch.
-- 173 tests (unit, Docker integration, e2e). 91% branch coverage. Strict mypy. Ruff.
+- Example tasks: `examples/basic` (hard, three bugs) and `examples/off-by-one` (easy), each
+  with hidden tests and a reference patch.
+- Real LLM agent example on local Ollama models (`examples/agents/ollama`, experimental);
+  python adapters loadable from a spec-relative `path`; `--agent-timeout` override.
+- First experiment with real models: `docs/experiments/2026-10-small-local-models.md`.
+- 188 tests (unit, Docker integration, e2e). Strict mypy. Ruff.
 
 ## In progress
 
@@ -39,6 +43,7 @@ See [roadmap](../design/roadmap.md). Next: batch execution (v0.2).
 - The agent's configuration is recorded only by name in the manifest.
 - Image tags of prebuilt images are resolved from the local cache if present, without re-pulling.
 - Requires GNU `timeout` and `sleep` in task images.
+- The Ollama agent is single-run-validated only (n=1 per model/task); no pass-rate statistics yet.
 
 ## Technical debt
 
