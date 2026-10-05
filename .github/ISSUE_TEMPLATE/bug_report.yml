@@ -1,0 +1,31 @@
+name: Bug report
+description: Something does not work as documented
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: The task file (or a minimal one) and the exact command.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: doctor
+    attributes:
+      label: Output of `agentenv doctor` and `agentenv version`
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: run
+    attributes:
+      label: Run details
+      description: Output of `agentenv runs show <run-id> --events`, if a run was involved. Check it contains no secrets.
+      render: text

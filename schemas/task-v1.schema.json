@@ -1,0 +1,601 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$defs": {
+    "ArtifactSpec": {
+      "additionalProperties": false,
+      "description": "Extra files to collect from the agent's final workspace.",
+      "properties": {
+        "include": {
+          "default": [],
+          "description": "Glob patterns, workspace-relative.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Include",
+          "type": "array"
+        }
+      },
+      "title": "ArtifactSpec",
+      "type": "object"
+    },
+    "CommandGraderSpec": {
+      "additionalProperties": false,
+      "description": "Run a command; pass/fail is decided by its exit status.",
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "weight": {
+          "default": 1.0,
+          "description": "Relative weight for 'weighted'.",
+          "exclusiveMinimum": 0,
+          "title": "Weight",
+          "type": "number"
+        },
+        "type": {
+          "const": "command",
+          "title": "Type",
+          "type": "string"
+        },
+        "command": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Command",
+          "type": "array"
+        },
+        "success_exit_codes": {
+          "default": [
+            0
+          ],
+          "items": {
+            "type": "integer"
+          },
+          "minItems": 1,
+          "title": "Success Exit Codes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "type",
+        "command"
+      ],
+      "title": "CommandGraderSpec",
+      "type": "object"
+    },
+    "EnvironmentSpec": {
+      "additionalProperties": false,
+      "description": "How the sandbox image is obtained and how processes inside it run.",
+      "properties": {
+        "dockerfile": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Dockerfile relative to the task file.",
+          "title": "Dockerfile"
+        },
+        "context": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Build context directory; defaults to the Dockerfile's.",
+          "title": "Context"
+        },
+        "image": {
+          "anyOf": [
+            {
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Prebuilt image reference. Pin with @sha256:... for reproducibility.",
+          "title": "Image"
+        },
+        "workspace": {
+          "default": "/workspace",
+          "description": "Where the task source is placed in the sandbox.",
+          "title": "Workspace",
+          "type": "string"
+        },
+        "user": {
+          "default": "1000:1000",
+          "description": "Numeric uid:gid that owns the workspace and runs every command.",
+          "pattern": "^\\d{1,10}:\\d{1,10}$",
+          "title": "User",
+          "type": "string"
+        },
+        "variables": {
+          "description": "Non-secret environment variables for every sandbox command.",
+          "patternProperties": {
+            "^[A-Za-z_][A-Za-z0-9_]*$": {
+              "type": "string"
+            }
+          },
+          "title": "Variables",
+          "type": "object"
+        }
+      },
+      "title": "EnvironmentSpec",
+      "type": "object"
+    },
+    "GitSource": {
+      "additionalProperties": false,
+      "description": "Clone a git repository and check out an exact revision.",
+      "properties": {
+        "type": {
+          "const": "git",
+          "title": "Type",
+          "type": "string"
+        },
+        "repository": {
+          "description": "Clone URL (https://, ssh:// or git@host:path, or file:// for tests).",
+          "minLength": 1,
+          "title": "Repository",
+          "type": "string"
+        },
+        "revision": {
+          "description": "Commit SHA (recommended), tag or branch. The resolved SHA is recorded.",
+          "minLength": 1,
+          "pattern": "^[A-Za-z0-9._/-]+$",
+          "title": "Revision",
+          "type": "string"
+        },
+        "subdirectory": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Use only this subdirectory of the repository.",
+          "title": "Subdirectory"
+        }
+      },
+      "required": [
+        "type",
+        "repository",
+        "revision"
+      ],
+      "title": "GitSource",
+      "type": "object"
+    },
+    "GradingSpec": {
+      "additionalProperties": false,
+      "description": "How the agent's solution is evaluated.\n\nGrading happens in a *fresh* sandbox: the agent's final workspace is copied in,\n``protected_paths`` are restored from the pristine source, and ``assets`` (hidden\ntests) are added at ``assets_mount``. The agent never sees the assets.",
+      "properties": {
+        "graders": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "command": "#/$defs/CommandGraderSpec",
+                "pytest": "#/$defs/PytestGraderSpec"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/PytestGraderSpec"
+              },
+              {
+                "$ref": "#/$defs/CommandGraderSpec"
+              }
+            ]
+          },
+          "minItems": 1,
+          "title": "Graders",
+          "type": "array"
+        },
+        "assets": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Hidden grader files, relative to the task file.",
+          "title": "Assets"
+        },
+        "assets_mount": {
+          "default": "/grader",
+          "title": "Assets Mount",
+          "type": "string"
+        },
+        "protected_paths": {
+          "default": [],
+          "description": "Workspace paths restored to their original state before grading.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Protected Paths",
+          "type": "array"
+        },
+        "aggregation": {
+          "default": "all",
+          "description": "'all': every grader must pass. 'weighted': weighted score >= threshold.",
+          "enum": [
+            "all",
+            "weighted"
+          ],
+          "title": "Aggregation",
+          "type": "string"
+        },
+        "pass_threshold": {
+          "default": 1.0,
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Pass Threshold",
+          "type": "number"
+        }
+      },
+      "required": [
+        "graders"
+      ],
+      "title": "GradingSpec",
+      "type": "object"
+    },
+    "LocalSource": {
+      "additionalProperties": false,
+      "description": "Use a directory shipped alongside the task file as the workspace.",
+      "properties": {
+        "type": {
+          "const": "local",
+          "title": "Type",
+          "type": "string"
+        },
+        "path": {
+          "description": "Directory relative to the task file.",
+          "title": "Path",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type",
+        "path"
+      ],
+      "title": "LocalSource",
+      "type": "object"
+    },
+    "NetworkSpec": {
+      "additionalProperties": false,
+      "description": "Network access for task sandboxes. Disabled unless explicitly enabled.",
+      "properties": {
+        "enabled": {
+          "default": false,
+          "title": "Enabled",
+          "type": "boolean"
+        }
+      },
+      "title": "NetworkSpec",
+      "type": "object"
+    },
+    "PytestGraderSpec": {
+      "additionalProperties": false,
+      "description": "Run pytest and score by the fraction of tests that passed.",
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Name"
+        },
+        "weight": {
+          "default": 1.0,
+          "description": "Relative weight for 'weighted'.",
+          "exclusiveMinimum": 0,
+          "title": "Weight",
+          "type": "number"
+        },
+        "type": {
+          "const": "pytest",
+          "title": "Type",
+          "type": "string"
+        },
+        "paths": {
+          "default": [],
+          "description": "Test paths inside the grading sandbox (absolute or relative).",
+          "items": {
+            "type": "string"
+          },
+          "title": "Paths",
+          "type": "array"
+        },
+        "args": {
+          "default": [],
+          "description": "Extra pytest arguments.",
+          "items": {
+            "type": "string"
+          },
+          "title": "Args",
+          "type": "array"
+        },
+        "python": {
+          "default": "python",
+          "description": "Interpreter to use.",
+          "minLength": 1,
+          "title": "Python",
+          "type": "string"
+        }
+      },
+      "required": [
+        "type"
+      ],
+      "title": "PytestGraderSpec",
+      "type": "object"
+    },
+    "ResourceSpec": {
+      "additionalProperties": false,
+      "description": "Per-sandbox resource limits. Every field here is enforced by the Docker backend.",
+      "properties": {
+        "cpus": {
+          "default": 1.0,
+          "description": "CPU cores (fractional ok).",
+          "exclusiveMinimum": 0,
+          "maximum": 256,
+          "title": "Cpus",
+          "type": "number"
+        },
+        "memory_mb": {
+          "default": 2048,
+          "description": "Memory limit; swap is disabled.",
+          "maximum": 1048576,
+          "minimum": 128,
+          "title": "Memory Mb",
+          "type": "integer"
+        },
+        "pids_limit": {
+          "default": 512,
+          "description": "Maximum processes (fork-bomb guard).",
+          "maximum": 1000000,
+          "minimum": 16,
+          "title": "Pids Limit",
+          "type": "integer"
+        }
+      },
+      "title": "ResourceSpec",
+      "type": "object"
+    },
+    "SetupCommand": {
+      "additionalProperties": false,
+      "description": "A command run in the agent sandbox after the workspace is copied in.",
+      "properties": {
+        "command": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Command",
+          "type": "array"
+        },
+        "timeout_seconds": {
+          "anyOf": [
+            {
+              "exclusiveMinimum": 0,
+              "maximum": 86400,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Timeout Seconds"
+        }
+      },
+      "required": [
+        "command"
+      ],
+      "title": "SetupCommand",
+      "type": "object"
+    },
+    "TimeoutSpec": {
+      "additionalProperties": false,
+      "description": "Time limits for each lifecycle boundary, in seconds.",
+      "properties": {
+        "source_seconds": {
+          "default": 600,
+          "description": "Git clone/checkout.",
+          "exclusiveMinimum": 0,
+          "maximum": 86400,
+          "title": "Source Seconds",
+          "type": "integer"
+        },
+        "build_seconds": {
+          "default": 1800,
+          "exclusiveMinimum": 0,
+          "maximum": 86400,
+          "title": "Build Seconds",
+          "type": "integer"
+        },
+        "setup_seconds": {
+          "default": 600,
+          "exclusiveMinimum": 0,
+          "maximum": 86400,
+          "title": "Setup Seconds",
+          "type": "integer"
+        },
+        "agent_seconds": {
+          "default": 1800,
+          "exclusiveMinimum": 0,
+          "maximum": 86400,
+          "title": "Agent Seconds",
+          "type": "integer"
+        },
+        "command_seconds": {
+          "default": 600,
+          "description": "Default limit for a single agent command.",
+          "exclusiveMinimum": 0,
+          "maximum": 86400,
+          "title": "Command Seconds",
+          "type": "integer"
+        },
+        "grader_seconds": {
+          "default": 900,
+          "exclusiveMinimum": 0,
+          "maximum": 86400,
+          "title": "Grader Seconds",
+          "type": "integer"
+        }
+      },
+      "title": "TimeoutSpec",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "A complete, validated task definition (schema version 1).",
+  "properties": {
+    "schema_version": {
+      "const": "1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "id": {
+      "description": "Stable, unique task identifier.",
+      "pattern": "^[a-z0-9][a-z0-9._-]{0,127}$",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "maxLength": 200,
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "description": {
+      "default": "",
+      "title": "Description",
+      "type": "string"
+    },
+    "instructions": {
+      "description": "The problem statement given to agents.",
+      "minLength": 1,
+      "title": "Instructions",
+      "type": "string"
+    },
+    "tags": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Tags",
+      "type": "array"
+    },
+    "source": {
+      "discriminator": {
+        "mapping": {
+          "git": "#/$defs/GitSource",
+          "local": "#/$defs/LocalSource"
+        },
+        "propertyName": "type"
+      },
+      "oneOf": [
+        {
+          "$ref": "#/$defs/LocalSource"
+        },
+        {
+          "$ref": "#/$defs/GitSource"
+        }
+      ],
+      "title": "Source"
+    },
+    "environment": {
+      "$ref": "#/$defs/EnvironmentSpec"
+    },
+    "setup": {
+      "default": [],
+      "items": {
+        "$ref": "#/$defs/SetupCommand"
+      },
+      "title": "Setup",
+      "type": "array"
+    },
+    "resources": {
+      "$ref": "#/$defs/ResourceSpec",
+      "default": {
+        "cpus": 1.0,
+        "memory_mb": 2048,
+        "pids_limit": 512
+      }
+    },
+    "timeouts": {
+      "$ref": "#/$defs/TimeoutSpec",
+      "default": {
+        "source_seconds": 600,
+        "build_seconds": 1800,
+        "setup_seconds": 600,
+        "agent_seconds": 1800,
+        "command_seconds": 600,
+        "grader_seconds": 900
+      }
+    },
+    "network": {
+      "$ref": "#/$defs/NetworkSpec",
+      "default": {
+        "enabled": false
+      }
+    },
+    "grading": {
+      "$ref": "#/$defs/GradingSpec"
+    },
+    "artifacts": {
+      "$ref": "#/$defs/ArtifactSpec",
+      "default": {
+        "include": []
+      }
+    }
+  },
+  "required": [
+    "schema_version",
+    "id",
+    "name",
+    "instructions",
+    "source",
+    "environment",
+    "grading"
+  ],
+  "title": "TaskSpec",
+  "type": "object"
+}

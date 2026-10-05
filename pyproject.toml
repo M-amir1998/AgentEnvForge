@@ -1,0 +1,134 @@
+[project]
+name = "agentenvforge"
+dynamic = ["version"]
+description = "Define, execute, grade and reproduce isolated software-engineering environments for AI agents."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+requires-python = ">=3.12"
+authors = [{ name = "AgentEnvForge contributors" }]
+keywords = ["ai-agents", "evaluation", "benchmark", "sandbox", "docker", "reinforcement-learning"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Software Development :: Testing",
+    "Typing :: Typed",
+]
+# Every runtime dependency is justified in docs/development/dependencies.md.
+dependencies = [
+    "docker>=7.1",
+    "pydantic>=2.9",
+    "pyyaml>=6.0.2",
+    "rich>=13.9",
+    "typer>=0.15",
+]
+
+[project.urls]
+Homepage = "https://github.com/M-amir1998/AgentEnvForge"
+Documentation = "https://github.com/M-amir1998/AgentEnvForge/tree/main/docs"
+Issues = "https://github.com/M-amir1998/AgentEnvForge/issues"
+Changelog = "https://github.com/M-amir1998/AgentEnvForge/blob/main/CHANGELOG.md"
+
+[project.scripts]
+agentenv = "agentenvforge.cli.app:main"
+
+[dependency-groups]
+dev = [
+    "hypothesis>=6.120",
+    "mypy>=1.13",
+    "pre-commit>=4.0",
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "ruff>=0.8",
+    "types-docker>=7.1",
+    "types-pyyaml>=6.0",
+]
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+path = "src/agentenvforge/_version.py"
+
+[tool.hatch.build.targets.sdist]
+include = ["src/agentenvforge", "tests", "examples", "docs", "README.md", "CHANGELOG.md", "LICENSE"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/agentenvforge"]
+
+# ---------------------------------------------------------------- ruff
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # pyflakes
+    "I",        # isort
+    "B",        # bugbear
+    "UP",       # pyupgrade
+    "SIM",      # simplify
+    "C4",       # comprehensions
+    "PTH",      # prefer pathlib
+    "RUF",      # ruff-specific
+    "S",        # bandit-style security checks
+    "BLE",      # blind except
+    "T20",      # no print()
+    "N",        # naming
+    "PL",       # pylint subset
+]
+ignore = [
+    "PLR0913",  # orchestration functions legitimately take several collaborators
+    "PLR2004",  # magic values are fine in comparisons against documented constants
+    "S603",     # subprocess calls use argument arrays; reviewed individually
+    "S607",     # `git` is resolved from PATH intentionally
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S108", "PLR2004", "T20", "PLC0415"]
+"examples/**" = ["T20", "S101", "INP001", "N818", "S603", "BLE001"]  # incl. buggy code
+"scripts/**" = ["T20"]
+"src/agentenvforge/cli/**" = ["PLR0912", "B008"]
+
+# ---------------------------------------------------------------- mypy
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["src", "tests"]
+plugins = ["pydantic.mypy"]
+warn_unreachable = true
+enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
+
+[[tool.mypy.overrides]]
+module = ["tests.*"]
+disallow_untyped_decorators = false
+
+# ---------------------------------------------------------------- pytest
+[tool.pytest.ini_options]
+minversion = "8.0"
+testpaths = ["tests"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+markers = [
+    "docker: requires a reachable Docker daemon (skipped otherwise)",
+    "e2e: end-to-end tests executing complete runs",
+]
+filterwarnings = ["error"]
+
+[tool.coverage.run]
+source = ["agentenvforge"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+exclude_also = ["if TYPE_CHECKING:", "raise NotImplementedError", "\\.\\.\\."]

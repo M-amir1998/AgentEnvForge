@@ -1,0 +1,206 @@
+"""Agent specification files and adapter construction.
+
+Agents are described separately from tasks so the same task can evaluate many agents::
+
+    # agents/reference.yaml
+    schema_version: "1"
+    type: command                 # command | manual | noop | python
+    name: reference-solver
+    command: ["python", "/agent/solve.py"]
+    files: reference              # copied to /agent in the sandbox
+    secrets: [OPENAI_API_KEY]     # host variables passed through, redacted from records
+
+    # A host-side adapter (e.g. an LLM tool-use loop) from any importable module:
+    type: python
+    name: my-llm-agent
+    adapter: my_package.agents:build   # callable(**options) -> AgentAdapter
+    options: {model: some-model}
+"""
+
+from __future__ import annotations
+
+import importlib
+import shlex
+from collections.abc import Callable, Mapping
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Annotated, Literal
+
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
+
+from agentenvforge.agents.base import AgentAdapter
+from agentenvforge.agents.builtin import CommandAgent, ManualAgent, NoopAgent
+from agentenvforge.domain.failures import TaskValidationError, ValidationIssue
+from agentenvforge.domain.types import JSONScalar
+from agentenvforge.tasks.documents import issues_from_pydantic, read_yaml_mapping
+from agentenvforge.tasks.schema import Argv, RelativePath
+
+BUILTIN_AGENTS = ("manual", "noop")
+_ENV_NAME = r"^[A-Za-z_][A-Za-z0-9_]*$"
+_LABEL = r"^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+
+
+class _AgentSpecBase(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    schema_version: Literal["1"] = "1"
+    name: str = Field(pattern=_LABEL)
+
+
+class CommandAgentSpec(_AgentSpecBase):
+    """An external program run inside the agent sandbox."""
+
+    type: Literal["command"]
+    command: Argv
+    files: RelativePath | None = None
+    environment: dict[Annotated[str, Field(pattern=_ENV_NAME)], str] = Field(default_factory=dict)
+    secrets: tuple[Annotated[str, Field(pattern=_ENV_NAME)], ...] = ()
+
+
+class PythonAgentSpec(_AgentSpecBase):
+    """A host-side adapter loaded from ``module:callable``."""
+
+    type: Literal["python"]
+    adapter: str = Field(pattern=r"^[A-Za-z_][\w.]*:[A-Za-z_]\w*$")
+    options: dict[str, JSONScalar] = Field(default_factory=dict)
+
+
+class SimpleAgentSpec(_AgentSpecBase):
+    """A built-in adapter without options."""
+
+    type: Literal["manual", "noop"]
+
+
+AgentSpec = Annotated[
+    CommandAgentSpec | PythonAgentSpec | SimpleAgentSpec, Field(discriminator="type")
+]
+
+
+_AGENT_SPEC_ADAPTER: TypeAdapter[CommandAgentSpec | PythonAgentSpec | SimpleAgentSpec] = (
+    TypeAdapter(AgentSpec)
+)
+
+
+@dataclass(frozen=True, slots=True)
+class AgentEnvironment:
+    """Process-edge inputs needed to construct adapters (kept explicit for testability)."""
+
+    environ: Mapping[str, str]
+    write: Callable[[str], None]
+    prompt: Callable[[str], str]
+
+
+def resolve_agent(reference: str, environment: AgentEnvironment) -> AgentAdapter:
+    """Build an adapter from a built-in name (``manual``, ``noop``) or a spec file path."""
+    if reference in BUILTIN_AGENTS:
+        return _build(
+            SimpleAgentSpec.model_validate({"type": reference, "name": reference}),
+            base_dir=Path.cwd(),
+            environment=environment,
+            source=reference,
+        )
+    path = Path(reference).resolve()
+    document = read_yaml_mapping(path)
+    try:
+        spec = _AGENT_SPEC_ADAPTER.validate_python(document)
+    except ValidationError as error:
+        raise TaskValidationError(str(path), issues_from_pydantic(error)) from error
+    return _build(spec, base_dir=path.parent, environment=environment, source=str(path))
+
+
+def command_agent_from_string(command: str, *, label: str = "inline") -> CommandAgent:
+    """Build a :class:`CommandAgent` from a shell-like string (split with ``shlex``)."""
+    argv = tuple(shlex.split(command))
+    if not argv:
+        raise TaskValidationError(
+            "--agent-command", [ValidationIssue(field="command", reason="must not be empty")]
+        )
+    return CommandAgent(label=label, command=argv)
+
+
+def _build(
+    spec: CommandAgentSpec | PythonAgentSpec | SimpleAgentSpec,
+    *,
+    base_dir: Path,
+    environment: AgentEnvironment,
+    source: str,
+) -> AgentAdapter:
+    if isinstance(spec, CommandAgentSpec):
+        return _build_command_agent(spec, base_dir, environment, source)
+    if isinstance(spec, PythonAgentSpec):
+        return _build_python_agent(spec, source)
+    if spec.type == "manual":
+        return ManualAgent(write=environment.write, wait_for_confirmation=environment.prompt)
+    return NoopAgent()
+
+
+def _build_command_agent(
+    spec: CommandAgentSpec, base_dir: Path, environment: AgentEnvironment, source: str
+) -> CommandAgent:
+    issues: list[ValidationIssue] = []
+    files: Path | None = None
+    if spec.files is not None:
+        files = (base_dir / spec.files).resolve()
+        if not files.is_relative_to(base_dir.resolve()):
+            issues.append(
+                ValidationIssue(
+                    field="files", reason="must stay inside the spec directory", received=spec.files
+                )
+            )
+        elif not files.is_dir():
+            issues.append(
+                ValidationIssue(
+                    field="files", reason="directory does not exist", received=spec.files
+                )
+            )
+    secrets: dict[str, str] = {}
+    for name in spec.secrets:
+        value = environment.environ.get(name)
+        if not value:
+            issues.append(
+                ValidationIssue(
+                    field="secrets", reason="environment variable is not set", received=name
+                )
+            )
+        else:
+            secrets[name] = value
+    if issues:
+        raise TaskValidationError(source, issues)
+    return CommandAgent(
+        label=spec.name,
+        command=spec.command,
+        files=files,
+        environment=dict(spec.environment),
+        secrets=secrets,
+    )
+
+
+def _build_python_agent(spec: PythonAgentSpec, source: str) -> AgentAdapter:
+    module_name, attribute = spec.adapter.split(":", maxsplit=1)
+    try:
+        factory = getattr(importlib.import_module(module_name), attribute)
+        adapter = factory(**spec.options)
+    except (ImportError, AttributeError, TypeError) as error:
+        raise TaskValidationError(
+            source,
+            [
+                ValidationIssue(
+                    field="adapter",
+                    reason=f"cannot construct adapter: {error}",
+                    received=spec.adapter,
+                )
+            ],
+        ) from error
+    if not isinstance(adapter, AgentAdapter):
+        raise TaskValidationError(
+            source,
+            [
+                ValidationIssue(
+                    field="adapter",
+                    reason="factory did not return an AgentAdapter "
+                    "(needs a `name` property and a `run(context)` method)",
+                    received=spec.adapter,
+                )
+            ],
+        )
+    return adapter

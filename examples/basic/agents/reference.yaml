@@ -1,0 +1,6 @@
+# Scripted reference agent: applies the known fix. Used by the end-to-end test.
+schema_version: "1"
+type: command
+name: reference-solver
+command: ["python", "/agent/solve.py"]
+files: reference
