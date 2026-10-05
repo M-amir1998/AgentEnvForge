@@ -1,0 +1,22 @@
+name: New sandbox backend
+description: Propose a sandbox backend (Podman, Firecracker, Kubernetes, ...)
+labels: [sandbox]
+body:
+  - type: textarea
+    id: why
+    attributes:
+      label: Motivation
+      description: What does this backend offer over Docker (isolation strength, scale, platform)?
+    validations:
+      required: true
+  - type: textarea
+    id: limits
+    attributes:
+      label: Which ResourceSpec limits can it enforce, and how?
+      description: CPU, memory (no swap), PIDs, network isolation, timeouts. Unenforceable limits must be documented, not claimed.
+    validations:
+      required: true
+  - type: textarea
+    id: transfer
+    attributes:
+      label: How are files moved in and out (put_archive / get_archive)?

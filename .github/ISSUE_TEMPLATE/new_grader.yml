@@ -1,0 +1,22 @@
+name: New grader
+description: Propose a built-in grader type
+labels: [grader]
+body:
+  - type: textarea
+    id: evaluates
+    attributes:
+      label: What does it evaluate, and why can't `command`/`pytest` graders do it?
+    validations:
+      required: true
+  - type: textarea
+    id: spec
+    attributes:
+      label: Proposed task YAML
+      render: yaml
+  - type: textarea
+    id: verdict
+    attributes:
+      label: How are passed/score and grader errors decided?
+      description: Distinguish "solution is wrong" (failed grade) from "could not judge" (GraderError).
+    validations:
+      required: true
