@@ -17,7 +17,7 @@ Implementation: `sandbox/docker_backend.py`. Decision record: ADR-0001.
 | Command time limit | GNU `timeout --kill-after=5s` + host watchdog | `test_command_timeout_is_enforced` |
 | Bounded output | at most 1 MiB per stream kept, truncation recorded | `test_output_is_bounded` |
 | Controlled environment | only task `environment.variables`, `HOME=/tmp`, and per-command env | user/env test |
-| Findability | labels `io.agentenvforge.{managed,run-id,task-id,role}` | orphan test |
+| Findability | container labels `io.agentenvforge.{managed,run-id,task-id,role}`; sandboxes are found by `run-id` (images carry `io.agentenvforge.image` instead, because Docker copies image labels onto every container started from them) | orphan and regression tests |
 
 **Not enforced in v0.1:** disk usage (overlay quotas are not portable across Docker
 storage drivers and Docker Desktop), GPU allocation, I/O bandwidth. A disk-filling agent

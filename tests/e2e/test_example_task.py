@@ -21,7 +21,7 @@ from typer.testing import CliRunner, Result
 
 from agentenvforge.cli.app import EXIT_GRADE_FAILED, EXIT_INFRASTRUCTURE, EXIT_OK, app
 from agentenvforge.persistence.sqlite import SqliteRunRepository
-from agentenvforge.sandbox.docker_backend import LABEL_MANAGED
+from agentenvforge.sandbox.docker_backend import LABEL_RUN_ID
 from tests.conftest import EXAMPLE_TASK, REFERENCE_AGENT
 
 pytestmark = [pytest.mark.docker, pytest.mark.e2e]
@@ -42,9 +42,7 @@ def latest_result(home: Path) -> dict[str, object]:
 
 
 def assert_no_sandboxes_left() -> None:
-    leftovers = docker.from_env().containers.list(
-        all=True, filters={"label": f"{LABEL_MANAGED}=true"}
-    )
+    leftovers = docker.from_env().containers.list(all=True, filters={"label": LABEL_RUN_ID})
     assert leftovers == [], [container.name for container in leftovers]
 
 

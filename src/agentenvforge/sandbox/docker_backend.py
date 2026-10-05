@@ -54,8 +54,13 @@ from agentenvforge.timeouts import CallTimeoutError, call_with_timeout
 
 logger = logging.getLogger(__name__)
 
+# Container labels, set explicitly on every sandbox. A sandbox is identified by
+# LABEL_RUN_ID: Docker copies *image* labels onto any container created from an image, so
+# an image label would wrongly mark containers that other tools start from our images.
 LABEL_MANAGED = "io.agentenvforge.managed"
 LABEL_RUN_ID = "io.agentenvforge.run-id"
+LABEL_IMAGE = "io.agentenvforge.image"
+"""Image label: marks images built by AgentEnvForge (never used to find sandboxes)."""
 LABEL_TASK_ID = "io.agentenvforge.task-id"
 LABEL_ROLE = "io.agentenvforge.role"
 
@@ -333,7 +338,7 @@ class DockerSandboxBackend:
                 rm=True,
                 forcerm=True,
                 pull=False,
-                labels={LABEL_MANAGED: "true", LABEL_TASK_ID: spec.task_id},
+                labels={LABEL_IMAGE: "true", LABEL_TASK_ID: spec.task_id},
             )
         except docker.errors.BuildError as error:
             raise SandboxBuildError(
@@ -420,9 +425,11 @@ class DockerSandboxBackend:
 
     def remove_orphaned_sandboxes(self, run_id: str | None = None) -> list[str]:
         """Remove every AgentEnvForge container (optionally only those of ``run_id``)."""
-        labels = [f"{LABEL_MANAGED}=true"]
-        if run_id is not None:
-            labels.append(f"{LABEL_RUN_ID}={run_id}")
+        # Requiring the run-id label selects only containers AgentEnvForge created itself.
+        labels = [
+            f"{LABEL_MANAGED}=true",
+            LABEL_RUN_ID if run_id is None else f"{LABEL_RUN_ID}={run_id}",
+        ]
         try:
             containers = self._client.containers.list(all=True, filters={"label": labels})
         except docker.errors.DockerException as error:

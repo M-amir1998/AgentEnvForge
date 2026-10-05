@@ -16,7 +16,12 @@ from agentenvforge.domain.commands import CommandRequest
 from agentenvforge.domain.failures import SandboxBuildError, SandboxPathNotFoundError
 from agentenvforge.domain.ids import new_run_id
 from agentenvforge.sandbox.base import ImageSpec, PreparedImage, SandboxConfig, SandboxRole
-from agentenvforge.sandbox.docker_backend import LABEL_RUN_ID, DockerSandbox, DockerSandboxBackend
+from agentenvforge.sandbox.docker_backend import (
+    LABEL_MANAGED,
+    LABEL_RUN_ID,
+    DockerSandbox,
+    DockerSandboxBackend,
+)
 from agentenvforge.sandbox.transfer import download_directory, read_file, upload_directory
 from agentenvforge.workspace.archive import Ownership
 
@@ -176,6 +181,22 @@ def test_destroy_is_idempotent_and_orphans_are_found(
     assert len(labelled) == 1
     assert backend.remove_orphaned_sandboxes(run_id) == [f"agentenv-{run_id}-grader"]
     assert backend.remove_orphaned_sandboxes(run_id) == []
+
+
+def test_containers_started_by_others_from_our_images_are_not_sandboxes(
+    backend: DockerSandboxBackend, image: PreparedImage
+) -> None:
+    """Regression: image labels are inherited by every container created from the image,
+    so a user's `docker run <our image>` must not be mistaken for (and deleted as) a sandbox."""
+    client = docker.from_env()
+    foreign = client.containers.create(
+        image.image_id, command=["true"], labels={LABEL_MANAGED: "true"}
+    )
+    try:
+        assert foreign.name not in backend.remove_orphaned_sandboxes()
+        foreign.reload()  # still exists
+    finally:
+        foreign.remove(force=True)
 
 
 def test_dockerfile_build_is_cached_and_failures_are_classified(
