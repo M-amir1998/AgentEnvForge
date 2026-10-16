@@ -39,9 +39,15 @@ Changelog = "https://github.com/M-amir1998/AgentEnvForge/blob/main/CHANGELOG.md"
 [project.scripts]
 agentenv = "agentenvforge.cli.app:main"
 
+[project.optional-dependencies]
+plots = [
+    "matplotlib>=3.9",
+]
+
 [dependency-groups]
 dev = [
     "hypothesis>=6.120",
+    "matplotlib>=3.9",
     "mypy>=1.13",
     "pre-commit>=4.0",
     "pytest>=8.3",
