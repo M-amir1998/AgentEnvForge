@@ -123,6 +123,13 @@ def parse_agent_spec(document: Mapping[str, object], *, source: str) -> AgentSpe
         raise TaskValidationError(source, issues_from_pydantic(error)) from error
 
 
+def adapter_secrets(adapter: AgentAdapter) -> tuple[str, ...]:
+    """Secret values an adapter carries, which every record of its runs must redact."""
+    if isinstance(adapter, CommandAgent):
+        return tuple(adapter.secrets.values())
+    return ()
+
+
 def command_agent_from_string(command: str, *, label: str = "inline") -> CommandAgent:
     """Build a :class:`CommandAgent` from a shell-like string (split with ``shlex``)."""
     argv = tuple(shlex.split(command))
