@@ -21,6 +21,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path, PurePosixPath
 from typing import Protocol
 
+from agentenvforge.cancellation import CancellationToken
 from agentenvforge.domain.commands import (
     DEFAULT_OUTPUT_LIMIT_BYTES,
     CommandExecution,
@@ -61,11 +62,13 @@ class SandboxSession:
         deadline: float | None = None,
         observer: CommandObserver | None = None,
         timeout_error: type[AgentEnvForgeError] = AgentTimeoutError,
+        cancellation: CancellationToken | None = None,
     ) -> None:
         """Create a session.
 
         ``deadline`` is a :func:`time.monotonic` value after which no command may run;
         ``timeout_error`` is raised when a caller tries to run a command past it.
+        Once ``cancellation`` is requested, no further command may start.
         """
         self._sandbox = sandbox
         self.workspace = workspace
@@ -74,6 +77,7 @@ class SandboxSession:
         self._deadline = deadline
         self._observer = observer
         self._timeout_error = timeout_error
+        self._cancellation = cancellation
         self._closed = threading.Event()
         self._command_count = 0
 
@@ -88,7 +92,12 @@ class SandboxSession:
         return self._command_count
 
     def remaining_seconds(self) -> float | None:
-        """Seconds left before the deadline, or ``None`` without a deadline."""
+        """Seconds left before the deadline, or ``None`` without a deadline.
+
+        A closed session has no time left, so cooperative adapters stop promptly.
+        """
+        if self._closed.is_set():
+            return 0.0
         if self._deadline is None:
             return None
         return max(0.0, self._deadline - time.monotonic())
@@ -109,6 +118,8 @@ class SandboxSession:
     ) -> CommandExecution:
         """Execute ``argv`` (an argument vector; no shell is involved unless you add one)."""
         self._ensure_open()
+        if self._cancellation is not None:
+            self._cancellation.raise_if_cancelled()
         timeout = timeout_seconds if timeout_seconds is not None else self._default_timeout
         remaining = self.remaining_seconds()
         if remaining is not None:

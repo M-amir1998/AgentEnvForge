@@ -25,6 +25,7 @@ import sys
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from pathlib import Path
+from types import ModuleType
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
@@ -83,6 +84,9 @@ AgentSpec = Annotated[
 ]
 
 
+type AgentSpecModel = CommandAgentSpec | PythonAgentSpec | SimpleAgentSpec
+"""Any validated agent specification."""
+
 _AGENT_SPEC_ADAPTER: TypeAdapter[CommandAgentSpec | PythonAgentSpec | SimpleAgentSpec] = (
     TypeAdapter(AgentSpec)
 )
@@ -100,19 +104,23 @@ class AgentEnvironment:
 def resolve_agent(reference: str, environment: AgentEnvironment) -> AgentAdapter:
     """Build an adapter from a built-in name (``manual``, ``noop``) or a spec file path."""
     if reference in BUILTIN_AGENTS:
-        return _build(
+        return build_agent(
             SimpleAgentSpec.model_validate({"type": reference, "name": reference}),
             base_dir=Path.cwd(),
             environment=environment,
             source=reference,
         )
     path = Path(reference).resolve()
-    document = read_yaml_mapping(path)
+    spec = parse_agent_spec(read_yaml_mapping(path), source=str(path))
+    return build_agent(spec, base_dir=path.parent, environment=environment, source=str(path))
+
+
+def parse_agent_spec(document: Mapping[str, object], *, source: str) -> AgentSpecModel:
+    """Validate an agent specification document (from a file or inline in an experiment)."""
     try:
-        spec = _AGENT_SPEC_ADAPTER.validate_python(document)
+        return _AGENT_SPEC_ADAPTER.validate_python(dict(document))
     except ValidationError as error:
-        raise TaskValidationError(str(path), issues_from_pydantic(error)) from error
-    return _build(spec, base_dir=path.parent, environment=environment, source=str(path))
+        raise TaskValidationError(source, issues_from_pydantic(error)) from error
 
 
 def command_agent_from_string(command: str, *, label: str = "inline") -> CommandAgent:
@@ -125,13 +133,14 @@ def command_agent_from_string(command: str, *, label: str = "inline") -> Command
     return CommandAgent(label=label, command=argv)
 
 
-def _build(
-    spec: CommandAgentSpec | PythonAgentSpec | SimpleAgentSpec,
+def build_agent(
+    spec: AgentSpecModel,
     *,
     base_dir: Path,
     environment: AgentEnvironment,
     source: str,
 ) -> AgentAdapter:
+    """Construct the adapter described by ``spec``; relative paths resolve against ``base_dir``."""
     if isinstance(spec, CommandAgentSpec):
         return _build_command_agent(spec, base_dir, environment, source)
     if isinstance(spec, PythonAgentSpec):
@@ -182,47 +191,64 @@ def _build_command_agent(
     )
 
 
+def _invalid(source: str, field: str, reason: str, received: str) -> TaskValidationError:
+    return TaskValidationError(
+        source, [ValidationIssue(field=field, reason=reason, received=received)]
+    )
+
+
 def _build_python_agent(spec: PythonAgentSpec, base_dir: Path, source: str) -> AgentAdapter:
     module_name, attribute = spec.adapter.split(":", maxsplit=1)
+    search_dir: Path | None = None
     if spec.path is not None:
         search_dir = (base_dir / spec.path).resolve()
         if not search_dir.is_relative_to(base_dir.resolve()) or not search_dir.is_dir():
-            raise TaskValidationError(
-                source,
-                [
-                    ValidationIssue(
-                        field="path",
-                        reason="must be an existing directory inside the spec directory",
-                        received=spec.path,
-                    )
-                ],
+            raise _invalid(
+                source, "path", "must be an existing directory inside the spec directory", spec.path
             )
         if str(search_dir) not in sys.path:
             sys.path.insert(0, str(search_dir))
     try:
-        factory = getattr(importlib.import_module(module_name), attribute)
+        module = importlib.import_module(module_name)
+    except ImportError as error:
+        raise _invalid(source, "adapter", f"cannot import module: {error}", spec.adapter) from error
+    if search_dir is not None:
+        _ensure_module_from(module, search_dir, source, spec.adapter)
+    try:
+        factory = getattr(module, attribute)
         adapter = factory(**spec.options)
-    except (ImportError, AttributeError, TypeError, ValueError) as error:
-        raise TaskValidationError(
+    # Any failure of third-party construction code is a configuration problem of this spec;
+    # it must be reported as such, with the cause chained, not escape unclassified.
+    except Exception as error:  # re-raised as a classified validation error
+        raise _invalid(
             source,
-            [
-                ValidationIssue(
-                    field="adapter",
-                    reason=f"cannot construct adapter: {error}",
-                    received=spec.adapter,
-                )
-            ],
+            "adapter",
+            f"cannot construct adapter: {type(error).__name__}: {error}",
+            spec.adapter,
         ) from error
     if not isinstance(adapter, AgentAdapter):
-        raise TaskValidationError(
+        raise _invalid(
             source,
-            [
-                ValidationIssue(
-                    field="adapter",
-                    reason="factory did not return an AgentAdapter "
-                    "(needs a `name` property and a `run(context)` method)",
-                    received=spec.adapter,
-                )
-            ],
+            "adapter",
+            "factory did not return an AgentAdapter "
+            "(needs a `name` property and a `run(context)` method)",
+            spec.adapter,
         )
     return adapter
+
+
+def _ensure_module_from(module: ModuleType, search_dir: Path, source: str, adapter: str) -> None:
+    """Reject a module that was imported earlier from somewhere else.
+
+    Python caches modules by name: two agent directories that both contain ``agent.py``
+    would otherwise silently share whichever was imported first.
+    """
+    origin = getattr(module, "__file__", None)
+    if origin is None or not Path(origin).resolve().is_relative_to(search_dir):
+        raise _invalid(
+            source,
+            "adapter",
+            f"module name {module.__name__!r} is already loaded from {origin}; give adapter "
+            "modules unique names",
+            adapter,
+        )

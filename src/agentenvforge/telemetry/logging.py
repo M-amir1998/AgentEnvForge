@@ -123,13 +123,15 @@ def run_log_file(path: Path, run_id: str) -> Iterator[None]:
     handler.setFormatter(JsonFormatter())
     handler.addFilter(RunFilter(run_id))
     logger = logging.getLogger(ROOT_LOGGER)
-    previous_level = logger.level
     logger.addHandler(handler)
-    if logger.level == logging.NOTSET or logger.level > logging.DEBUG:
+    # The logger must pass DEBUG records for the run's file handler to receive them. The
+    # level is only ever raised, never restored: with concurrent runs, saving and restoring it
+    # would let one run's exit lower the level while another run is still logging. Output
+    # stays controlled by each handler's own level (console handlers are set separately).
+    if logger.getEffectiveLevel() > logging.DEBUG:
         logger.setLevel(logging.DEBUG)
     try:
         yield
     finally:
         logger.removeHandler(handler)
-        logger.setLevel(previous_level)
         handler.close()

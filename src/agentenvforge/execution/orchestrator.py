@@ -17,10 +17,11 @@ by the caller (the CLI today, an API or worker process later).
 
 from __future__ import annotations
 
-import hashlib
+import functools
 import itertools
 import logging
 import platform
+import re
 import sys
 import time
 from collections.abc import Callable, Sequence
@@ -30,6 +31,7 @@ from pathlib import Path, PurePosixPath
 from agentenvforge._version import __version__
 from agentenvforge.agents.base import AgentAdapter, AgentContext, AgentTask, ArtifactWriter
 from agentenvforge.artifacts import ArtifactStore
+from agentenvforge.cancellation import CancellationToken
 from agentenvforge.domain.clock import elapsed_ms, monotonic_ms
 from agentenvforge.domain.events import EventType
 from agentenvforge.domain.failures import (
@@ -37,17 +39,25 @@ from agentenvforge.domain.failures import (
     AgentError,
     AgentTimeoutError,
     FailureInfo,
+    FailureReason,
     GraderError,
     GraderTimeoutError,
+    RunCancelledError,
     SandboxError,
     SandboxPathNotFoundError,
+    SandboxStartError,
     SetupCommandError,
     TaskValidationError,
     ValidationIssue,
     terminal_status_for,
 )
 from agentenvforge.domain.ids import new_run_id
-from agentenvforge.domain.manifest import ImageProvenance, RunManifest, SourceProvenance
+from agentenvforge.domain.manifest import (
+    ExperimentLink,
+    ImageProvenance,
+    RunManifest,
+    SourceProvenance,
+)
 from agentenvforge.domain.results import (
     AgentResult,
     CleanupReport,
@@ -57,12 +67,12 @@ from agentenvforge.domain.results import (
 )
 from agentenvforge.domain.status import RunStateMachine, RunStatus
 from agentenvforge.events.recorder import EventSink, RunRecorder
+from agentenvforge.execution.images import task_image
 from agentenvforge.execution.solution import build_grading_tree, collect_included_files
 from agentenvforge.grading.base import GradingContext
 from agentenvforge.grading.graders import build_grader
 from agentenvforge.persistence.repository import NewRun, RunRepository
 from agentenvforge.sandbox.base import (
-    ImageSpec,
     PreparedImage,
     Sandbox,
     SandboxBackend,
@@ -81,6 +91,8 @@ from agentenvforge.workspace.fingerprint import hash_directory
 
 logger = logging.getLogger(__name__)
 
+_RUN_ID_PATTERN = re.compile(r"^run_[0-9a-z]{26}$")
+
 
 @dataclass(frozen=True, slots=True)
 class RunRequest:
@@ -94,6 +106,17 @@ class RunRequest:
     agent_timeout_seconds: int | None = None
     """Replaces the task's ``timeouts.agent_seconds`` (e.g. for slow local models).
     Recorded in the manifest's ``overrides``, because it changes the evaluation conditions."""
+    run_id: str | None = None
+    """Pre-assigned run ID (an experiment records it before the run starts); generated if unset."""
+    seed: int | None = None
+    """Offered to the agent through ``AgentContext.seed`` and recorded in the manifest."""
+    cancellation: CancellationToken | None = None
+    """Lets another thread cancel the run; it then ends ``CANCELLED`` after normal cleanup."""
+    experiment: ExperimentLink | None = None
+    """The run's place in an experiment, recorded in its manifest."""
+    agent_spec: dict[str, object] | None = None
+    """The validated agent specification (recorded so runs identify their agent configuration,
+    not only the adapter's name)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -165,7 +188,9 @@ class RunOrchestrator:
         Never raises for run failures (they are reported in the result). Cancellation via
         ``KeyboardInterrupt`` is converted into a ``CANCELLED`` result after cleanup.
         """
-        run_id = new_run_id()
+        run_id = request.run_id or new_run_id()
+        if not _RUN_ID_PATTERN.match(run_id):
+            raise ValueError(f"invalid run id {run_id!r}")
         task = request.task
         with log_context(run_id=run_id, task_id=task.spec.id):
             log_path = self._settings.work_dir / f"{run_id}.log"
@@ -174,6 +199,9 @@ class RunOrchestrator:
                 self._drive(run)
                 result = self._finalize(run)
             self._store_log(run, log_path)
+            # From here on the run is immutable: an abandoned adapter thread that is still
+            # alive gets an error instead of silently adding artifacts to a finished run.
+            run.recorder.seal()
         return result
 
     def _create_run(self, run_id: str, request: RunRequest) -> _ActiveRun:
@@ -203,6 +231,9 @@ class RunOrchestrator:
                 if request.agent_timeout_seconds is not None
                 else {}
             ),
+            seed=request.seed,
+            experiment=request.experiment,
+            agent_spec=request.agent_spec,
         )
         self._repository.create_run(
             NewRun(
@@ -240,15 +271,20 @@ class RunOrchestrator:
             (RunStatus.RUNNING_GRADER, self._stage_run_grader),
             (RunStatus.COLLECTING_ARTIFACTS, self._stage_collect_artifacts),
         )
+        cancellation = run.request.cancellation
         try:
             for status, stage in stages:
+                # Once grading has produced a verdict the run is not interrupted any more:
+                # cancelling would only throw away a valid result.
+                if cancellation is not None and status is not RunStatus.COLLECTING_ARTIFACTS:
+                    cancellation.raise_if_cancelled()
                 self._enter(run, status)
                 stage(run)
         # This is the one deliberate catch-all boundary: every failure, including
         # unexpected bugs and Ctrl+C, must become a classified, persisted run outcome,
         # and cleanup must still run. The traceback is logged, never discarded.
         except (Exception, KeyboardInterrupt) as error:
-            run.failure = FailureInfo.from_exception(error, run.machine.current)
+            run.failure = _classify_failure(run, error)
             logger.error(
                 "run failed in %s: %s",
                 run.machine.current.value,
@@ -256,7 +292,12 @@ class RunOrchestrator:
                 exc_info=not isinstance(error, (AgentEnvForgeError, KeyboardInterrupt)),
             )
         finally:
-            self._enter(run, RunStatus.CLEANING_UP)
+            # Cleanup must happen even if recording the CLEANING_UP transition fails (e.g. the
+            # database is unavailable), or the run's containers would outlive it.
+            try:
+                self._enter(run, RunStatus.CLEANING_UP)
+            except Exception:  # logged; cleanup below must still run
+                logger.exception("could not record the cleanup transition of %s", run.run_id)
             self._cleanup(run)
 
     def _enter(self, run: _ActiveRun, status: RunStatus) -> None:
@@ -324,35 +365,8 @@ class RunOrchestrator:
 
     def _stage_build_image(self, run: _ActiveRun) -> None:
         environment = run.task.spec.environment
-        context_hash: str | None = None
-        if environment.dockerfile is not None:
-            dockerfile = run.task.host_path(environment.dockerfile)
-            context = (
-                run.task.host_path(environment.context)
-                if environment.context
-                else dockerfile.parent
-            )
-            context_hash = hash_directory(context)
-            cache_key = hashlib.sha256(
-                f"{context_hash}:{dockerfile.relative_to(context).as_posix()}".encode()
-            ).hexdigest()
-            spec = ImageSpec(
-                task_id=run.task.spec.id,
-                dockerfile=dockerfile,
-                context=context,
-                image=None,
-                cache_key=cache_key,
-                timeout_seconds=run.task.spec.timeouts.build_seconds,
-            )
-        else:
-            spec = ImageSpec(
-                task_id=run.task.spec.id,
-                dockerfile=None,
-                context=None,
-                image=environment.image,
-                cache_key="",
-                timeout_seconds=run.task.spec.timeouts.build_seconds,
-            )
+        image_request = task_image(run.task)
+        spec, context_hash = image_request.spec, image_request.build_context_hash
         run.recorder.emit(
             EventType.SANDBOX_BUILD_STARTED,
             dockerfile=environment.dockerfile,
@@ -434,6 +448,7 @@ class RunOrchestrator:
             session=session,
             time_budget_seconds=budget,
             save_artifact=_artifact_writer(run.recorder),
+            seed=run.request.seed,
         )
         run.recorder.emit(EventType.AGENT_STARTED, agent=agent.name, time_budget_seconds=budget)
         started = monotonic_ms()
@@ -442,6 +457,7 @@ class RunOrchestrator:
                 lambda: agent.run(context),
                 budget + self._settings.adapter_grace_seconds,
                 name="agent",
+                cancellation=run.request.cancellation,
             )
         except CallTimeoutError as error:
             # The adapter thread cannot be killed; revoke its session and destroy its
@@ -454,9 +470,10 @@ class RunOrchestrator:
             ) from error
         except (SandboxPathNotFoundError, SessionClosedError) as error:
             raise AgentError(f"agent {agent.name} failed: {error}") from error
-        except AgentEnvForgeError:
+        except (AgentEnvForgeError, KeyboardInterrupt):
             raise
-        except Exception as error:
+        # BaseException: an adapter calling sys.exit() must not escape the run lifecycle.
+        except BaseException as error:
             raise AgentError(
                 f"agent adapter {agent.name} raised {type(error).__name__}: {error}"
             ) from error
@@ -541,6 +558,7 @@ class RunOrchestrator:
                 lambda: grader.grade(context),
                 budget + self._settings.adapter_grace_seconds,
                 name="grader",
+                cancellation=run.request.cancellation,
             )
         except CallTimeoutError as error:
             session.close()
@@ -548,9 +566,9 @@ class RunOrchestrator:
             raise GraderTimeoutError(
                 f"grader exceeded its {budget:g}s limit", details={"limit_seconds": budget}
             ) from error
-        except AgentEnvForgeError:
+        except (AgentEnvForgeError, KeyboardInterrupt):
             raise
-        except Exception as error:
+        except BaseException as error:
             raise GraderError(
                 f"grader {grader.name} raised {type(error).__name__}: {error}"
             ) from error
@@ -592,6 +610,7 @@ class RunOrchestrator:
             deadline=time.monotonic() + timeout_seconds if timeout_seconds is not None else None,
             observer=run.recorder.command_observer(role) if role is not None else None,
             timeout_error=timeout_error,
+            cancellation=run.request.cancellation,
         )
 
     def _create_sandbox(self, run: _ActiveRun, role: SandboxRole) -> Sandbox:
@@ -611,11 +630,22 @@ class RunOrchestrator:
             environment=dict(spec.environment.variables),
         )
         started = monotonic_ms()
-        sandbox = call_with_timeout(
-            lambda: self._backend.create_sandbox(config),
-            self._settings.sandbox_start_timeout_seconds,
-            name=f"sandbox-start-{role.value}",
-        )
+        start_timeout = self._settings.sandbox_start_timeout_seconds
+        try:
+            sandbox = call_with_timeout(
+                lambda: self._backend.create_sandbox(config),
+                start_timeout,
+                name=f"sandbox-start-{role.value}",
+                # Not cancellable: a start abandoned half-way is exactly what leaks containers.
+                on_abandoned=_destroy_late_sandbox,
+            )
+        except CallTimeoutError as error:
+            # If the abandoned start completes later, _destroy_late_sandbox removes the
+            # container; the label-based sweep at cleanup covers the remaining window.
+            raise SandboxStartError(
+                f"{role.value} sandbox did not start within {start_timeout:g}s",
+                details={"timeout_seconds": start_timeout},
+            ) from error
         run.sandboxes.append(sandbox)
         run.recorder.emit(
             EventType.SANDBOX_STARTED,
@@ -656,8 +686,15 @@ class RunOrchestrator:
         )
 
     def _cleanup(self, run: _ActiveRun) -> None:
+        # Each step is isolated: a failure removing one sandbox (or recording that it was
+        # removed) must not prevent the remaining sandboxes from being removed.
         for sandbox in reversed(run.sandboxes):
-            self._destroy(run, sandbox)
+            _guarded(
+                run,
+                f"removing sandbox {sandbox.name}",
+                functools.partial(self._destroy, run, sandbox),
+            )
+        _guarded(run, "sweeping untracked sandboxes", lambda: self._sweep_untracked_sandboxes(run))
         if run.request.keep_workspace:
             logger.info("keeping work directory %s", run.work_dir)
             return
@@ -665,6 +702,24 @@ class RunOrchestrator:
             remove_tree(run.work_dir)
         except OSError as error:
             run.cleanup_errors.append(f"could not remove work directory {run.work_dir}: {error}")
+
+    def _sweep_untracked_sandboxes(self, run: _ActiveRun) -> None:
+        """Remove sandboxes of this run that were never handed to the orchestrator.
+
+        Normally there are none. They appear only when sandbox creation was abandoned after a
+        timeout or cancellation but completed later, so this is a cheap safety net that makes
+        "no container outlives its run" hold on those paths too.
+        """
+        try:
+            swept = self._backend.remove_orphaned_sandboxes(run.run_id)
+        except SandboxError as error:
+            run.cleanup_errors.append(f"could not sweep sandboxes of {run.run_id}: {error}")
+            return
+        for name in swept:
+            if name not in run.destroyed:
+                run.destroyed.add(name)
+                logger.warning("removed untracked sandbox %s", name)
+                run.recorder.emit(EventType.SANDBOX_CLEANUP_COMPLETED, sandbox=name, untracked=True)
 
     def _finalize(self, run: _ActiveRun) -> RunResult:
         terminal = (
@@ -692,6 +747,9 @@ class RunOrchestrator:
             finished_at=finished_at,
             duration_ms=round((finished_at - created_at).total_seconds() * 1000),
         )
+        # Secrets can appear in failure messages; the stored result is redacted like every
+        # other record of the run.
+        result = RunResult.model_validate_json(run.recorder.redact(result.model_dump_json()))
         self._repository.complete_run(result)
         if run.failure is None:
             run.recorder.emit(EventType.RUN_COMPLETED, passed=result.passed, score=result.score)
@@ -721,6 +779,42 @@ class RunOrchestrator:
             return
         run.recorder.save_artifact("logs/agentenv.log", content)
         log_path.unlink(missing_ok=True)
+
+
+def _classify_failure(run: _ActiveRun, error: BaseException) -> FailureInfo:
+    stage = run.machine.current
+    cancellation = run.request.cancellation
+    if (
+        cancellation is not None
+        and cancellation.cancelled
+        and not isinstance(error, RunCancelledError)
+    ):
+        # Carrying out a cancellation closes sessions and removes containers, which makes
+        # in-flight work fail with secondary errors. Those are consequences, not causes.
+        return FailureInfo(
+            reason=FailureReason.CANCELLED,
+            stage=stage,
+            message=f"cancelled: {cancellation.reason}",
+            error_type=type(error).__name__,
+            details={"consequential_error": str(error)[:300]},
+        )
+    return FailureInfo.from_exception(error, stage)
+
+
+def _destroy_late_sandbox(sandbox: Sandbox) -> None:
+    try:
+        sandbox.destroy()
+    except SandboxError:
+        logger.exception("could not remove late-created sandbox %s", sandbox.name)
+
+
+def _guarded(run: _ActiveRun, what: str, action: Callable[[], object]) -> None:
+    try:
+        action()
+    except Exception as error:  # cleanup boundary: record and continue
+        message = f"{what} failed: {type(error).__name__}: {error}"
+        run.cleanup_errors.append(message)
+        logger.exception(message)
 
 
 def _artifact_writer(recorder: RunRecorder) -> ArtifactWriter:
