@@ -5,7 +5,6 @@ from __future__ import annotations
 from collections.abc import Sequence
 from pathlib import Path
 
-from rich import box
 from rich.console import Console
 from rich.markup import escape
 from rich.table import Table
@@ -31,6 +30,7 @@ _OUTCOME_STYLE = {
 
 _OUTCOME_WIDTH = max(len(outcome.value) for outcome in Outcome)
 _TOTALS_EVERY = 10
+_WIDE_TERMINAL = 100
 _REASON_CHARACTERS = 100
 
 
@@ -210,17 +210,22 @@ def render_summary(console: Console, summary: ExperimentSummary) -> None:
     table = Table(
         title=f"Experiment {summary.experiment_id} ({summary.status})",
         title_justify="left",
-        box=box.SIMPLE_HEAD,
+        box=None,  # no box characters: identical in every terminal and when redirected
         pad_edge=False,
-        padding=(0, 1, 0, 0),
+        padding=(0, 2, 0, 0),
+        header_style="bold underline",
     )
-    # Only model names fold on narrow terminals; agent IDs and numbers stay whole.
+    # Agent IDs and numbers never wrap. Model names only fit on wide terminals; report.md
+    # always lists them.
+    with_model = console.width >= _WIDE_TERMINAL
     table.add_column("agent", no_wrap=True)
-    table.add_column("model", overflow="fold")
+    if with_model:
+        table.add_column("model", overflow="fold")
     for header in ("scored", "success", "95% CI", "timeout", "excluded", "median"):
         table.add_column(header, no_wrap=True)
     for agent in summary.agents:
-        table.add_row(*_agent_row(agent))
+        row = _agent_row(agent)
+        table.add_row(*(row if with_model else [row[0], *row[2:]]))
     console.print(table)
     counts = summary.counts
     console.print(
@@ -254,9 +259,9 @@ def render_experiment_list(
 ) -> None:
     """Table of experiments, most recent first."""
     # Compact enough for 80 columns; IDs stay whole so they can be copied.
-    table = Table(box=box.SIMPLE_HEAD, pad_edge=False, padding=(0, 1, 0, 0))
+    table = Table(box=None, pad_edge=False, padding=(0, 2, 0, 0), header_style="bold underline")
     table.add_column("experiment id", no_wrap=True, min_width=30)
-    table.add_column("definition", no_wrap=True, overflow="ellipsis", min_width=10)
+    table.add_column("definition", overflow="ellipsis", min_width=8)
     table.add_column("status", no_wrap=True, min_width=len("interrupted"))
     table.add_column("runs", justify="right", no_wrap=True, min_width=4)
     table.add_column("created (UTC)", no_wrap=True)
