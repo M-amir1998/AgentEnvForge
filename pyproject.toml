@@ -104,6 +104,7 @@ ignore = [
 "tests/**" = ["S101", "S105", "S108", "PLR2004", "T20", "PLC0415"]
 "examples/**" = ["T20", "S101", "INP001", "N818", "S603", "BLE001"]  # incl. buggy code
 "scripts/**" = ["T20"]
+"benchmarks/**" = ["T20", "INP001"]  # command-line scripts
 "src/agentenvforge/cli/**" = ["PLR0912", "PLR0917", "B008"]  # Typer: one parameter per option
 
 # ---------------------------------------------------------------- mypy
@@ -111,7 +112,7 @@ ignore = [
 python_version = "3.12"
 strict = true
 # The example Ollama agent is type-checked too; tests import it by module name.
-files = ["src", "tests", "examples/agents/ollama"]
+files = ["src", "tests", "examples/agents/ollama", "benchmarks"]
 mypy_path = "examples/agents/ollama"
 plugins = ["pydantic.mypy"]
 warn_unreachable = true
