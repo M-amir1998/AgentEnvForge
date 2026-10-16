@@ -214,8 +214,8 @@ def render_summary(console: Console, summary: ExperimentSummary) -> None:
         pad_edge=False,
         padding=(0, 1, 0, 0),
     )
-    # Numbers never wrap; only the agent and model names fold on narrow terminals.
-    table.add_column("agent", overflow="fold")
+    # Only model names fold on narrow terminals; agent IDs and numbers stay whole.
+    table.add_column("agent", no_wrap=True)
     table.add_column("model", overflow="fold")
     for header in ("scored", "success", "95% CI", "timeout", "excluded", "median"):
         table.add_column(header, no_wrap=True)
