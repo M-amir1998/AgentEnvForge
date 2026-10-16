@@ -65,20 +65,29 @@ runs in execution order.
 uv run agentenv experiment run my-experiment.yaml
 ```
 
+The start of a real run, the [local-ollama benchmark](../../benchmarks/local-ollama/experiment.yaml)
+on a CPU-only laptop:
+
 ```text
-experiment my-first-experiment  Two tasks, a model and two control agents
-  2 task(s) x 3 agent(s) x 3 repetition(s) = 18 planned runs, 1 worker(s)
+experiment local-ollama  Tiny local coding models (Ollama, CPU only)
+  3 task(s) x 5 agent(s) x 3 repetition(s) = 45 planned runs, 1 worker(s)
   ...
-  [ 1/18] passed                  4.3s  oracle / moving-average-off-by-one #1
-  [ 2/18] failed                  2.9s  noop / moving-average-off-by-one #1
-  [ 3/18] agent timeout         601.2s  qwen-1.5b / moving-average-off-by-one #1
-      agent exceeded its 600s time budget (run_01m53...)
+  checking agent qwen2.5-coder-0.5b ...
+  ...
+  preparing the image of ledger-transaction-rollback ...
+  [ 1/45] passed                  2.4s  oracle / moving-average-off-by-one #1
+  [ 2/45] failed                 2m14s  qwen2.5-coder-0.5b / moving-average-off-by-one #1
+  [ 3/45] failed                 4m41s  qwen2.5-coder-3b / moving-average-off-by-one #1
+  [ 4/45] failed                  2.4s  noop / moving-average-off-by-one #1
   ...
 ```
 
 Each line is one finished run: its outcome, its duration, and agent / task / repetition.
-For failures other than a graded `failed`, a second line says why and names the run, so
-`agentenv runs show <run id>` can show everything about it.
+A graded `failed` means the agent finished but the hidden tests failed. For any other
+failure (timeout, crash, unreachable model server), a second line says why and names the
+run, so `agentenv runs show <run id>` can show everything about it. Agents run in a
+shuffled order within each task and repetition, so slow drift on the machine affects them
+alike.
 
 Options:
 
