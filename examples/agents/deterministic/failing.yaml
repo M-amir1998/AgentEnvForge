@@ -1,0 +1,6 @@
+# Deterministic test agent: gives up immediately without changing anything (exit code 1).
+# Expected outcome: the run completes and the grader marks the (unchanged) solution as failed.
+schema_version: "1"
+type: command
+name: failing
+command: ["sh", "-c", "echo 'giving up without making changes' >&2; exit 1"]

@@ -1,0 +1,6 @@
+# Deterministic test agent: hangs. Combine with a short `agent_timeout_seconds` in the
+# experiment to produce a controlled agent timeout.
+schema_version: "1"
+type: command
+name: sleeper
+command: ["sleep", "3600"]

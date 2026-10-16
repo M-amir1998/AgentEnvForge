@@ -1,0 +1,12 @@
+# Deterministic test agent with a controlled runtime: waits DELAY_SECONDS, then applies the
+# reference fix like the oracle agent (infrastructure validation only).
+schema_version: "1"
+type: command
+name: delayed-oracle
+command:
+  - sh
+  - -c
+  - sleep "$DELAY_SECONDS" && cp -r "/agent/$AGENTENV_TASK_ID/." "$AGENTENV_WORKSPACE/"
+files: overlays
+environment:
+  DELAY_SECONDS: "2"

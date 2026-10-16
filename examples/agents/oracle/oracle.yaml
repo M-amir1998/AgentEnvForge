@@ -1,0 +1,12 @@
+# Infrastructure-validation agent: applies the maintainers' reference fix for the current
+# task (overlays/<task-id>/ is copied over the workspace). It is NOT an AI agent. Use it to
+# check that a task is solvable and that the pipeline grades a correct solution as correct;
+# never report its results as agent performance.
+schema_version: "1"
+type: command
+name: oracle
+command:
+  - sh
+  - -c
+  - test -d "/agent/$AGENTENV_TASK_ID" || { echo "no reference solution for $AGENTENV_TASK_ID" >&2; exit 2; }; cp -r "/agent/$AGENTENV_TASK_ID/." "$AGENTENV_WORKSPACE/"
+files: overlays

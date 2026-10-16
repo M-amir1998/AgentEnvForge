@@ -1,0 +1,7 @@
+# Deterministic test agent: a host-side adapter that raises. Expected outcome: FAILED_AGENT
+# (agent_error) for every run, with no effect on other runs.
+schema_version: "1"
+type: python
+name: crasher
+adapter: deterministic_agents:build_crasher
+path: .
