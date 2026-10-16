@@ -1,0 +1,18 @@
+{
+  "os": "Windows",
+  "os_release": "11",
+  "architecture": "AMD64",
+  "python_version": "3.12.10",
+  "cpu_model": null,
+  "logical_cpus": null,
+  "memory_bytes": null,
+  "sandbox_backend": "docker",
+  "sandbox_backend_version": "29.8.1",
+  "sandbox_details": {
+    "api_version": "1.56",
+    "os": "linux",
+    "arch": "amd64",
+    "operating_system": "Docker Desktop",
+    "storage_driver": "overlayfs"
+  }
+}

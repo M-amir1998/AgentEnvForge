@@ -1,0 +1,661 @@
+{
+  "summary_version": 1,
+  "experiment_id": "exp_01m53d0yve1a42mccqhd3mp0an",
+  "spec_id": "failure-isolation",
+  "name": "Failure isolation under concurrency",
+  "status": "completed",
+  "partial": false,
+  "generated_at": "2026-10-16T22:24:23.123548Z",
+  "workers": 2,
+  "repetitions": 2,
+  "counts": {
+    "passed": 4,
+    "failed": 8,
+    "agent_timeout": 4,
+    "solution_timeout": 0,
+    "agent_error": 4,
+    "post_agent_error": 0,
+    "infrastructure_error": 0,
+    "agent_unavailable": 0,
+    "cancelled": 0,
+    "not_started": 0,
+    "incomplete": 0
+  },
+  "running_seconds": 32.096287,
+  "runs_per_hour": 2243.25,
+  "agents": [
+    {
+      "agent_id": "oracle",
+      "role": "reference",
+      "adapter": "command:oracle",
+      "model": null,
+      "counts": {
+        "passed": 4,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 4,
+        "trials": 4,
+        "estimate": 1.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "deterministic: repetitions were identical, so no interval"
+      },
+      "task_mean_success": 1.0,
+      "tasks_without_scored_runs": [],
+      "deterministic": true,
+      "pass_at_k": {
+        "k": 2,
+        "value": null,
+        "note": "deterministic agent: pass@k equals pass@1"
+      },
+      "run_seconds": {
+        "count": 4,
+        "mean": 3.364,
+        "median": 3.206,
+        "minimum": 3.123,
+        "maximum": 3.919,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_seconds": {
+        "count": 4,
+        "mean": 0.151,
+        "median": 0.139,
+        "minimum": 0.1,
+        "maximum": 0.228,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_budget_seconds": [],
+      "tokens": null
+    },
+    {
+      "agent_id": "noop",
+      "role": "baseline",
+      "adapter": "noop",
+      "model": null,
+      "counts": {
+        "passed": 0,
+        "failed": 4,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 4,
+        "estimate": 0.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "deterministic: repetitions were identical, so no interval"
+      },
+      "task_mean_success": 0.0,
+      "tasks_without_scored_runs": [],
+      "deterministic": true,
+      "pass_at_k": {
+        "k": 2,
+        "value": null,
+        "note": "deterministic agent: pass@k equals pass@1"
+      },
+      "run_seconds": {
+        "count": 4,
+        "mean": 2.934,
+        "median": 3.047,
+        "minimum": 2.276,
+        "maximum": 3.367,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_seconds": {
+        "count": 4,
+        "mean": 0.003,
+        "median": 0.003,
+        "minimum": 0.003,
+        "maximum": 0.003,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_budget_seconds": [],
+      "tokens": null
+    },
+    {
+      "agent_id": "failing",
+      "role": "subject",
+      "adapter": "command:failing",
+      "model": null,
+      "counts": {
+        "passed": 0,
+        "failed": 4,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 4,
+        "estimate": 0.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "deterministic: repetitions were identical, so no interval"
+      },
+      "task_mean_success": 0.0,
+      "tasks_without_scored_runs": [],
+      "deterministic": true,
+      "pass_at_k": {
+        "k": 2,
+        "value": null,
+        "note": "deterministic agent: pass@k equals pass@1"
+      },
+      "run_seconds": {
+        "count": 4,
+        "mean": 3.266,
+        "median": 3.125,
+        "minimum": 2.53,
+        "maximum": 4.287,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_seconds": {
+        "count": 4,
+        "mean": 0.108,
+        "median": 0.098,
+        "minimum": 0.083,
+        "maximum": 0.152,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_budget_seconds": [],
+      "tokens": null
+    },
+    {
+      "agent_id": "sleeper",
+      "role": "subject",
+      "adapter": "command:sleeper",
+      "model": null,
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "agent_timeout": 4,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 4,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.4898908364545972,
+        "confidence": 0.95,
+        "note": "pooled over this experiment's tasks (conditional on this task mix)"
+      },
+      "task_mean_success": 0.0,
+      "tasks_without_scored_runs": [],
+      "deterministic": false,
+      "pass_at_k": {
+        "k": 2,
+        "value": 0.0,
+        "note": null
+      },
+      "run_seconds": {
+        "count": 4,
+        "mean": 5.749,
+        "median": 5.664,
+        "minimum": 5.551,
+        "maximum": 6.117,
+        "p95": null,
+        "censored": 4
+      },
+      "agent_seconds": {
+        "count": 4,
+        "mean": 5.104,
+        "median": 5.091,
+        "minimum": 5.079,
+        "maximum": 5.158,
+        "p95": null,
+        "censored": 4
+      },
+      "agent_budget_seconds": [
+        5
+      ],
+      "tokens": null
+    },
+    {
+      "agent_id": "crasher",
+      "role": "subject",
+      "adapter": "crasher",
+      "model": null,
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 4,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 4,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.4898908364545972,
+        "confidence": 0.95,
+        "note": "pooled over this experiment's tasks (conditional on this task mix)"
+      },
+      "task_mean_success": 0.0,
+      "tasks_without_scored_runs": [],
+      "deterministic": false,
+      "pass_at_k": {
+        "k": 2,
+        "value": 0.0,
+        "note": null
+      },
+      "run_seconds": {
+        "count": 4,
+        "mean": 0.583,
+        "median": 0.602,
+        "minimum": 0.477,
+        "maximum": 0.651,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_seconds": {
+        "count": 4,
+        "mean": 0.002,
+        "median": 0.002,
+        "minimum": 0.001,
+        "maximum": 0.003,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_budget_seconds": [],
+      "tokens": null
+    }
+  ],
+  "tasks": [
+    {
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 0,
+        "failed": 2,
+        "agent_timeout": 2,
+        "solution_timeout": 0,
+        "agent_error": 2,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 6,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.3903342879021653,
+        "confidence": 0.95,
+        "note": "pooled over subject agents"
+      },
+      "reference_passed_all": true,
+      "baseline_failed_all": true
+    },
+    {
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 0,
+        "failed": 2,
+        "agent_timeout": 2,
+        "solution_timeout": 0,
+        "agent_error": 2,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 6,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.3903342879021653,
+        "confidence": 0.95,
+        "note": "pooled over subject agents"
+      },
+      "reference_passed_all": true,
+      "baseline_failed_all": true
+    }
+  ],
+  "cells": [
+    {
+      "agent_id": "oracle",
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 2,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 2,
+        "trials": 2,
+        "estimate": 1.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "oracle",
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 2,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 2,
+        "trials": 2,
+        "estimate": 1.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "noop",
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 0,
+        "failed": 2,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 2,
+        "estimate": 0.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "noop",
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 0,
+        "failed": 2,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 2,
+        "estimate": 0.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "failing",
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 0,
+        "failed": 2,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 2,
+        "estimate": 0.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "failing",
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 0,
+        "failed": 2,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 2,
+        "estimate": 0.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "sleeper",
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "agent_timeout": 2,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 2,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.6576197724933468,
+        "confidence": 0.95,
+        "note": null
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "sleeper",
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "agent_timeout": 2,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 2,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.6576197724933468,
+        "confidence": 0.95,
+        "note": null
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "crasher",
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 2,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 2,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.6576197724933468,
+        "confidence": 0.95,
+        "note": null
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "crasher",
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 2,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 2,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.6576197724933468,
+        "confidence": 0.95,
+        "note": null
+      },
+      "identical_repetitions": false
+    }
+  ],
+  "failures": [
+    {
+      "outcome": "agent_error",
+      "reason": "agent_error",
+      "stage": "running_agent",
+      "count": 4
+    },
+    {
+      "outcome": "agent_timeout",
+      "reason": "agent_timeout",
+      "stage": "running_agent",
+      "count": 4
+    },
+    {
+      "outcome": "failed",
+      "reason": "graded_failure",
+      "stage": null,
+      "count": 8
+    }
+  ],
+  "warnings": [],
+  "results_valid": true,
+  "invariant_violations": []
+}

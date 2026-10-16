@@ -1,0 +1,223 @@
+{
+  "manifest_version": 1,
+  "agentenvforge_version": "0.1.0.dev0",
+  "experiment_schema_version": "1",
+  "spec_id": "failure-isolation",
+  "name": "Failure isolation under concurrency",
+  "description": "Deterministic agents with known outcomes (pass, graded failure, agent timeout, adapter crash) run side by side; each failure must stay inside its own run.\n",
+  "definition_hash": "4c5f3d7325a1caec683b9f4533d98977d80363161e91df5e996d255283187a2a",
+  "definition": {
+    "schema_version": "1",
+    "id": "failure-isolation",
+    "name": "Failure isolation under concurrency",
+    "description": "Deterministic agents with known outcomes (pass, graded failure, agent timeout, adapter crash) run side by side; each failure must stay inside its own run.\n",
+    "tags": [
+      "benchmark",
+      "infrastructure"
+    ],
+    "tasks": [
+      "../../examples/off-by-one/task.yaml",
+      "../../examples/lru-cache/task.yaml"
+    ],
+    "agents": [
+      {
+        "id": "oracle",
+        "spec": "../../examples/agents/oracle/oracle.yaml",
+        "agent": null,
+        "agent_timeout_seconds": null,
+        "options": null,
+        "role": "reference"
+      },
+      {
+        "id": "noop",
+        "spec": null,
+        "agent": {
+          "type": "noop"
+        },
+        "agent_timeout_seconds": null,
+        "options": null,
+        "role": "baseline"
+      },
+      {
+        "id": "failing",
+        "spec": "../../examples/agents/deterministic/failing.yaml",
+        "agent": null,
+        "agent_timeout_seconds": null,
+        "options": null,
+        "role": "subject"
+      },
+      {
+        "id": "sleeper",
+        "spec": "../../examples/agents/deterministic/sleeper.yaml",
+        "agent": null,
+        "agent_timeout_seconds": 5,
+        "options": null,
+        "role": "subject"
+      },
+      {
+        "id": "crasher",
+        "spec": "../../examples/agents/deterministic/crasher.yaml",
+        "agent": null,
+        "agent_timeout_seconds": null,
+        "options": null,
+        "role": "subject"
+      }
+    ],
+    "repetitions": 2,
+    "execution": {
+      "workers": 2,
+      "base_seed": 0
+    },
+    "output": {
+      "directory": "../results/failure-isolation"
+    }
+  },
+  "tasks": [
+    {
+      "task_id": "moving-average-off-by-one",
+      "path": "../../examples/off-by-one/task.yaml",
+      "schema_version": "1",
+      "definition_hash": "a5302f056f1e59b0307004d197334033c3b1f2b4c3a57642ee10c66b28e66525",
+      "image_reference": "agentenvforge/moving-average-off-by-one:2892ab784d6b77f9bd936f6e",
+      "image_id": "sha256:d9b518c5eefadce990e3f63a19ac1dc89394fad4131a813b20cea1c872cbe7fe",
+      "image_cached": true,
+      "image_prepare_seconds": 0.046
+    },
+    {
+      "task_id": "lru-cache-recency",
+      "path": "../../examples/lru-cache/task.yaml",
+      "schema_version": "1",
+      "definition_hash": "a2a51fa84d19a6073d53347d6782e037d9387dadc1d0737620bb22f76467da78",
+      "image_reference": "agentenvforge/lru-cache-recency:2892ab784d6b77f9bd936f6e",
+      "image_id": "sha256:7955c559c6bcaa839cdef211dd459cf8d914159c90a7045dae938ee942ee0e7c",
+      "image_cached": true,
+      "image_prepare_seconds": 0.047
+    }
+  ],
+  "agents": [
+    {
+      "agent_id": "oracle",
+      "role": "reference",
+      "adapter": "command:oracle",
+      "source": "../../examples/agents/oracle/oracle.yaml",
+      "spec": {
+        "schema_version": "1",
+        "name": "oracle",
+        "type": "command",
+        "command": [
+          "sh",
+          "-c",
+          "test -d \"/agent/$AGENTENV_TASK_ID\" || { echo \"no reference solution for $AGENTENV_TASK_ID\" >&2; exit 2; }; cp -r \"/agent/$AGENTENV_TASK_ID/.\" \"$AGENTENV_WORKSPACE/\""
+        ],
+        "files": "overlays",
+        "environment": {},
+        "secrets": []
+      },
+      "spec_hash": "abdf0ccb9d9c15349075ce68c72d9e7997cb29b4b6dd39d8c8ce6cfda99e78ab",
+      "code_hash": "2af4bc1c9a4683921070144f2e16ff63f6385b7f77c17a7a5236ecd13e27c652",
+      "agent_timeout_seconds": null,
+      "provenance": {}
+    },
+    {
+      "agent_id": "noop",
+      "role": "baseline",
+      "adapter": "noop",
+      "source": "inline",
+      "spec": {
+        "schema_version": "1",
+        "name": "noop",
+        "type": "noop"
+      },
+      "spec_hash": "eaaa19a25fd71d98e94fece67247e96b30fb2d6bdc7caad9ff0181e0c7fa2239",
+      "code_hash": null,
+      "agent_timeout_seconds": null,
+      "provenance": {}
+    },
+    {
+      "agent_id": "failing",
+      "role": "subject",
+      "adapter": "command:failing",
+      "source": "../../examples/agents/deterministic/failing.yaml",
+      "spec": {
+        "schema_version": "1",
+        "name": "failing",
+        "type": "command",
+        "command": [
+          "sh",
+          "-c",
+          "echo 'giving up without making changes' >&2; exit 1"
+        ],
+        "files": null,
+        "environment": {},
+        "secrets": []
+      },
+      "spec_hash": "615a29dce2def1b95cf4ddde298ef772765195b8510e0efcb892b99477cfc452",
+      "code_hash": null,
+      "agent_timeout_seconds": null,
+      "provenance": {}
+    },
+    {
+      "agent_id": "sleeper",
+      "role": "subject",
+      "adapter": "command:sleeper",
+      "source": "../../examples/agents/deterministic/sleeper.yaml",
+      "spec": {
+        "schema_version": "1",
+        "name": "sleeper",
+        "type": "command",
+        "command": [
+          "sleep",
+          "3600"
+        ],
+        "files": null,
+        "environment": {},
+        "secrets": []
+      },
+      "spec_hash": "83cc2c88eae413b7a490bab4b179c922c4a5495ebb5a9d47bc7dce980b1fd42a",
+      "code_hash": null,
+      "agent_timeout_seconds": 5,
+      "provenance": {}
+    },
+    {
+      "agent_id": "crasher",
+      "role": "subject",
+      "adapter": "crasher",
+      "source": "../../examples/agents/deterministic/crasher.yaml",
+      "spec": {
+        "schema_version": "1",
+        "name": "crasher",
+        "type": "python",
+        "adapter": "deterministic_agents:build_crasher",
+        "path": ".",
+        "options": {}
+      },
+      "spec_hash": "04fdb1fd17edc375ae8ac5189f702c7368d8bb201637b494d9629b9c3d6009e7",
+      "code_hash": "27e50e75aa386e94b5a522fa18b7f977ba8deea3316098164d244a7bbd9da6aa",
+      "agent_timeout_seconds": null,
+      "provenance": {}
+    }
+  ],
+  "repetitions": 2,
+  "workers": 2,
+  "base_seed": 0,
+  "matrix_order": "interleaved-rounds, agent order shuffled per block (seed = base_seed)",
+  "planned_runs": 20,
+  "environment": {
+    "os": "Windows",
+    "os_release": "11",
+    "architecture": "AMD64",
+    "python_version": "3.12.10",
+    "cpu_model": null,
+    "logical_cpus": null,
+    "memory_bytes": null,
+    "sandbox_backend": "docker",
+    "sandbox_backend_version": "29.8.1",
+    "sandbox_details": {
+      "api_version": "1.56",
+      "os": "linux",
+      "arch": "amd64",
+      "operating_system": "Docker Desktop",
+      "storage_driver": "overlayfs"
+    }
+  }
+}
