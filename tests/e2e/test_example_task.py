@@ -19,7 +19,8 @@ import docker
 import pytest
 from typer.testing import CliRunner, Result
 
-from agentenvforge.cli.app import EXIT_GRADE_FAILED, EXIT_INFRASTRUCTURE, EXIT_OK, app
+from agentenvforge.cli.app import app
+from agentenvforge.cli.common import EXIT_GRADE_FAILED, EXIT_INFRASTRUCTURE, EXIT_OK
 from agentenvforge.persistence.sqlite import SqliteRunRepository
 from agentenvforge.sandbox.docker_backend import LABEL_RUN_ID
 from tests.conftest import EXAMPLE_TASK, REFERENCE_AGENT

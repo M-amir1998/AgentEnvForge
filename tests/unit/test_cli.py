@@ -9,7 +9,8 @@ import pytest
 from typer.testing import CliRunner
 
 from agentenvforge import __version__
-from agentenvforge.cli.app import EXIT_INVALID, app
+from agentenvforge.cli.app import app
+from agentenvforge.cli.common import EXIT_INVALID
 from tests.conftest import EXAMPLE_TASK, MINIMAL_TASK
 
 runner = CliRunner()

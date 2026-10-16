@@ -14,8 +14,11 @@ from agentenvforge.artifacts import LocalArtifactStore
 from agentenvforge.config.settings import Settings
 from agentenvforge.events.recorder import EventSink
 from agentenvforge.events.sinks import LoggingEventSink
+from agentenvforge.execution.experiments import ExperimentExecutor
 from agentenvforge.execution.orchestrator import OrchestratorSettings, RunOrchestrator
 from agentenvforge.persistence.sqlite import SqliteRunRepository
+from agentenvforge.persistence.sqlite_database import SqliteDatabase
+from agentenvforge.persistence.sqlite_experiments import SqliteExperimentRepository
 from agentenvforge.sandbox.base import SandboxBackend
 
 
@@ -31,7 +34,9 @@ class Services:
     """Long-lived services for one CLI invocation."""
 
     settings: Settings
+    database: SqliteDatabase
     repository: SqliteRunRepository
+    experiments: SqliteExperimentRepository
     artifacts: LocalArtifactStore
 
     def orchestrator(
@@ -51,15 +56,29 @@ class Services:
             event_sinks=(LoggingEventSink(), *sinks),
         )
 
+    def experiment_executor(self) -> ExperimentExecutor:
+        """Build the experiment executor: one backend (Docker client) and one orchestrator
+        per worker thread, sharing this database and artifact store."""
+        return ExperimentExecutor(
+            experiments=self.experiments,
+            runs=self.repository,
+            backend_factory=lambda: create_backend(self.settings),
+            orchestrator_factory=self.orchestrator,
+        )
+
     def close(self) -> None:
         """Release the database connection."""
-        self.repository.close()
+        self.database.close()
 
 
 def open_services(settings: Settings) -> Services:
     """Open the database and artifact store below ``settings.home``."""
+    settings.home.mkdir(parents=True, exist_ok=True)
+    database = SqliteDatabase(settings.database_path)
     return Services(
         settings=settings,
-        repository=SqliteRunRepository(settings.database_path),
+        database=database,
+        repository=SqliteRunRepository(database),
+        experiments=SqliteExperimentRepository(database),
         artifacts=LocalArtifactStore(settings.artifacts_dir),
     )
