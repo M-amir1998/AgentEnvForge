@@ -11,6 +11,7 @@ about *how* a single run executes stays in the task and agent specifications it 
       - id: qwen-7b
         spec: ../examples/agents/ollama/qwen2.5-coder-7b.yaml   # an agent spec file ...
         agent_timeout_seconds: 600                              # optional budget override
+        options: {temperature: 0.2}                             # optional option overrides
       - id: noop
         agent: {type: noop}                                     # ... or an inline spec
     repetitions: 3
@@ -31,6 +32,7 @@ from typing import Annotated, Any, Literal
 
 from pydantic import AfterValidator, BaseModel, ConfigDict, Field, model_validator
 
+from agentenvforge.domain.types import JSONScalar
 from agentenvforge.tasks.schema import MAX_TIMEOUT_SECONDS
 
 SUPPORTED_SCHEMA_VERSIONS: tuple[str, ...] = ("1",)
@@ -83,6 +85,12 @@ class ExperimentAgent(_Spec):
         le=MAX_TIMEOUT_SECONDS,
         description="Overrides each task's timeouts.agent_seconds for this agent (recorded).",
     )
+    options: dict[str, JSONScalar] | None = Field(
+        default=None,
+        description="Python agents only: overrides individual entries of the spec's options "
+        "(e.g. temperature), so one agent spec serves several configurations. The merged "
+        "spec is what is hashed and recorded.",
+    )
     role: AgentRole = Field(
         default="subject",
         description="'subject': an agent under evaluation. 'baseline' (e.g. noop, expected to "
@@ -116,8 +124,8 @@ class OutputSpec(_Spec):
 
     directory: PortablePath | None = Field(
         default=None,
-        description="Relative to the experiment file; each execution writes "
-        "<directory>/<experiment id>/. Default: <AGENTENV_HOME>/experiments/<experiment id>/.",
+        description="Relative to the experiment file. A later execution replaces the results "
+        "in it only with --overwrite. Default: <AGENTENV_HOME>/experiments/<experiment id>/.",
     )
 
 

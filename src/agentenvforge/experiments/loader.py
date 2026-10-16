@@ -44,6 +44,7 @@ from agentenvforge.experiments.schema import (
 )
 from agentenvforge.tasks.documents import issues_from_pydantic, read_yaml_mapping
 from agentenvforge.tasks.loader import LoadedTask, find_duplicate_ids, load_task
+from agentenvforge.tasks.schema import LocalSource
 from agentenvforge.workspace.fingerprint import hash_directory
 
 _CONCURRENCY_WARNING_WORKERS = 8
@@ -277,7 +278,7 @@ def _resolve_agent(
         document = read_yaml_mapping(spec_path)
         return ResolvedAgent(
             agent_id=entry.id,
-            spec=parse_agent_spec(document, source=str(spec_path)),
+            spec=_with_options(parse_agent_spec(document, source=str(spec_path)), entry, source),
             base_dir=spec_path.parent,
             source=str(spec_path),
             timeout_override=entry.agent_timeout_seconds,
@@ -289,7 +290,7 @@ def _resolve_agent(
     inline_source = f"{source}#agents[{index}]"
     return ResolvedAgent(
         agent_id=entry.id,
-        spec=parse_agent_spec(inline, source=inline_source),
+        spec=_with_options(parse_agent_spec(inline, source=inline_source), entry, inline_source),
         base_dir=root,
         source=inline_source,
         timeout_override=entry.agent_timeout_seconds,
@@ -298,9 +299,49 @@ def _resolve_agent(
     )
 
 
+def _with_options(spec: AgentSpecModel, entry: ExperimentAgent, source: str) -> AgentSpecModel:
+    """Apply the experiment's option overrides (python agents only)."""
+    if not entry.options:
+        return spec
+    if not isinstance(spec, PythonAgentSpec):
+        raise TaskValidationError(
+            source,
+            [
+                ValidationIssue(
+                    field="options",
+                    reason="only python agents take options; put command settings in the spec",
+                    received=spec.type,
+                )
+            ],
+        )
+    return spec.model_copy(update={"options": {**spec.options, **entry.options}})
+
+
 def _sha256_json(value: object) -> str:
     canonical = json.dumps(value, sort_keys=True, separators=(",", ":"))
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _task_content(task: LoadedTask) -> dict[str, str | None]:
+    """A task's identity: its definition *and* the files it ships (the local source tree,
+    the image build context, the hidden grader assets), so editing a hidden test or the
+    buggy project changes the experiment's hash. A git source is identified by the
+    repository and revision in its definition (each run records the resolved commit)."""
+    spec = task.spec
+    context = task.build_context()
+    return {
+        "id": spec.id,
+        "definition_hash": task.definition_hash,
+        "source_tree": (
+            hash_directory(task.host_path(spec.source.path))
+            if isinstance(spec.source, LocalSource)
+            else None
+        ),
+        "build_context": hash_directory(context) if context is not None else None,
+        "grader_assets": (
+            hash_directory(task.host_path(spec.grading.assets)) if spec.grading.assets else None
+        ),
+    }
 
 
 def _definition_hash(
@@ -317,7 +358,7 @@ def _definition_hash(
             "schema_version": spec.schema_version,
             "repetitions": spec.repetitions,
             "base_seed": spec.execution.base_seed,
-            "tasks": [{"id": t.spec.id, "definition_hash": t.definition_hash} for t in tasks],
+            "tasks": [_task_content(task) for task in tasks],
             "agents": [
                 {
                     "id": a.agent_id,

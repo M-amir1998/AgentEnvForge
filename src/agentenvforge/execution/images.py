@@ -32,7 +32,8 @@ def task_image(task: LoadedTask) -> TaskImage:
     """
     environment = task.spec.environment
     timeout = task.spec.timeouts.build_seconds
-    if environment.dockerfile is None:
+    context = task.build_context()
+    if environment.dockerfile is None or context is None:
         spec = ImageSpec(
             task_id=task.spec.id,
             dockerfile=None,
@@ -44,7 +45,6 @@ def task_image(task: LoadedTask) -> TaskImage:
         return TaskImage(spec=spec, build_context_hash=None)
 
     dockerfile = task.host_path(environment.dockerfile)
-    context = task.host_path(environment.context) if environment.context else dockerfile.parent
     context_hash = hash_directory(context)
     cache_key = hashlib.sha256(
         f"{context_hash}:{dockerfile.relative_to(context).as_posix()}".encode()
