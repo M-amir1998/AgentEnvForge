@@ -68,7 +68,9 @@ MIGRATIONS: tuple[str, ...] = (
     """,
     # 2: experiments and their planned runs (Milestone 8). Single runs are unaffected.
     #    experiment_runs.run_id has no foreign key on purpose: the run ID is assigned (and
-    #    recorded here) just before the run creates its own row in `runs`.
+    #    recorded here) just before the run creates its own row in `runs`. An entry's state
+    #    is derived (no run_id: not started; otherwise the linked run's own state), so it can
+    #    never disagree with the run record.
     """
     CREATE TABLE experiments (
         experiment_id    TEXT PRIMARY KEY,
@@ -81,6 +83,7 @@ MIGRATIONS: tuple[str, ...] = (
         planned_runs     INTEGER NOT NULL,
         workers          INTEGER NOT NULL,
         definition_hash  TEXT NOT NULL,
+        owner            TEXT NOT NULL,
         history_json     TEXT NOT NULL,
         manifest_json    TEXT NOT NULL,
         summary_json     TEXT,
@@ -97,7 +100,6 @@ MIGRATIONS: tuple[str, ...] = (
         repetition     INTEGER NOT NULL,
         seed           INTEGER NOT NULL,
         run_id         TEXT,
-        state          TEXT NOT NULL,
         PRIMARY KEY (experiment_id, position)
     );
     CREATE INDEX experiment_runs_run_id ON experiment_runs (run_id);
@@ -120,6 +122,9 @@ class SqliteDatabase:
         self._connection.row_factory = sqlite3.Row
         self._connection.execute("PRAGMA journal_mode=WAL")
         self._connection.execute("PRAGMA foreign_keys=ON")
+        # Safe with WAL: an OS crash can lose the last commits but never corrupts the file,
+        # and avoids an fsync per event, which matters with several runs writing at once.
+        self._connection.execute("PRAGMA synchronous=NORMAL")
         self._migrate()
 
     def close(self) -> None:
