@@ -5,8 +5,10 @@ Decision record: ADR-0004.
 ## Layout of `AGENTENV_HOME` (default `~/.agentenvforge`)
 
 ```text
-agentenv.db                 SQLite: runs, events, artifacts (metadata), schema_migrations
+agentenv.db                 SQLite: runs, events, artifacts (metadata), experiments,
+                            experiment_runs, schema_migrations
 artifacts/<run_id>/         every artifact of a run (see below)
+experiments/<experiment>/   default results directory of an experiment
 work/<run_id>/              temporary per-run working trees, deleted at cleanup
                             (kept with --keep-workspace)
 config.toml                 optional settings file
@@ -18,6 +20,14 @@ config.toml                 optional settings file
   failure reason, duration, `manifest_json`, `result_json`.
 - `events`: append-only, unique `(run_id, sequence)`.
 - `artifacts`: `(run_id, name)` unique, with size and SHA-256. Content lives in the store.
+- `experiments`, `experiment_runs` (migrations 2 and 3): an experiment's status history,
+  manifest and summary, and one row per planned run linking its matrix position, repetition
+  and seed to the run that executed it. See [experiments](experiments.md#persistence).
+
+Migrations are append-only and applied in order inside `BEGIN IMMEDIATE` transactions, so
+two processes opening an older database at the same time cannot both migrate it. The
+database uses WAL with `synchronous=NORMAL`; one connection per process is shared by
+all threads behind a lock.
 
 ## Artifacts of a run
 
@@ -43,10 +53,16 @@ definition, agent name, backend name/version, source type, **tree hash**, reposi
 requested revision and **resolved commit**, image reference, **image ID**, repo digests,
 **build-context hash**, and **grader-assets hash**.
 
+Runs executed by an experiment additionally record the **seed** offered to the agent, the
+**full agent specification** (secret names only), and the **experiment link** (experiment
+ID, matrix position, agent ID, repetition). The experiment's own manifest adds agent
+provenance (for Ollama: model digest, quantisation, server version) and the host
+environment.
+
 Two runs are comparable when these hashes match. Determinism the framework cannot
-provide (agent sampling temperature, network content when enabled, wall-clock-dependent
-code) must be controlled by the agent or task. The agent's own configuration is recorded
-only by name today. Recording full agent configuration is on the roadmap.
+provide (agent sampling, network content when enabled, wall-clock-dependent code) must be
+controlled by the agent or task. For a single `agentenv run`, the agent's configuration is
+still recorded only by name.
 
 ## Timestamps and IDs
 

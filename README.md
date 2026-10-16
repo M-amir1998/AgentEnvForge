@@ -14,8 +14,9 @@ grade a solution) in a versioned YAML file. AgentEnvForge then runs any agent ag
 in a disposable, resource-limited Docker sandbox, grades the result in a *separate*
 sandbox with hidden tests, and records everything needed to reproduce and audit the run.
 
-> Status: **pre-release (0.1.0.dev0)**. The single-task vertical slice is implemented and
-> tested end to end. See [what is supported today](#status) and the [roadmap](docs/design/roadmap.md).
+> Status: **pre-release (0.1.0.dev0)**. Single runs and batch experiments (tasks x agents x
+> repetitions, bounded concurrency, statistics and reports) are implemented and tested end
+> to end. See [what is supported today](#status) and the [roadmap](docs/design/roadmap.md).
 
 ## Why
 
@@ -79,9 +80,38 @@ uv run agentenv runs show <run-id> --events     # timings, provenance, event log
 uv run agentenv runs artifacts <run-id>         # solution.patch, grader reports, logs, ...
 ```
 
+### Batch experiments
+
+Describe tasks x agents x repetitions once, then run the whole matrix with bounded
+concurrency and get a statistical report:
+
+```bash
+uv run agentenv experiment validate benchmarks/failure-isolation/experiment.yaml
+uv run agentenv experiment run benchmarks/failure-isolation/experiment.yaml --output results/demo
+```
+
+```text
+  [ 1/20] passed                  4.3s  oracle / moving-average-off-by-one #1
+  [ 2/20] agent timeout           7.2s  sleeper / moving-average-off-by-one #1
+      agent command exceeded the 5s time budget (run_01m53bj41efhf1pmn2ra09k0q1)
+  [ 3/20] agent error             0.6s  crasher / moving-average-off-by-one #1
+      agent adapter crasher raised RuntimeError: deliberate adapter crash in run run_01m53bjb3r09awdhr1gkb (run_01m53bjb3r09awdhr1gkbmgv87)
+  ...
+results valid (no validity warnings)
+results: /path/to/AgentEnvForge/results/demo
+  report: /path/to/AgentEnvForge/results/demo/report.md
+```
+
+The results directory holds `report.md`, `summary.json`, `runs.csv`, `failures.csv`,
+plots, and a manifest with everything needed to reproduce the experiment.
+
+Ctrl+C stops scheduling, cancels and cleans up the active runs, and still reports the
+completed ones. See the [batch experiments tutorial](docs/tutorials/batch-experiments.md).
+
 Next: [write your first task](docs/tutorials/first-task.md) ·
 [connect your own agent](docs/tutorials/custom-agent-adapter.md) ·
-[custom grading](docs/tutorials/custom-grader.md)
+[custom grading](docs/tutorials/custom-grader.md) ·
+[batch experiments](docs/tutorials/batch-experiments.md)
 
 ## How it works
 
@@ -127,7 +157,10 @@ Read more: [architecture overview](docs/architecture/overview.md) ·
 | Run state machine, failure taxonomy, structured events, JSON logs, secret redaction | **implemented** |
 | SQLite persistence, local artifact store, reproducibility manifest, patch capture | **implemented** |
 | `doctor`, `cleanup` of orphaned sandboxes | **implemented** |
-| Batch execution with bounded concurrency | planned (v0.2) |
+| Batch experiments: tasks x agents x repetitions, bounded workers, backpressure, cancellation, circuit breaker | **implemented** |
+| Experiment statistics (Wilson intervals, gated pass@k, latency, failure breakdown) and JSON/CSV/Markdown/plot reports | **implemented** |
+| Benchmarks: scaling, failure isolation, tiny local models ([benchmarks/](benchmarks/README.md)) | **implemented** |
+| Retries of infrastructure failures, resuming interrupted experiments | planned |
 | `reproduce <run-id>`, HTTP API, metrics export | planned |
 | Disk quotas, gVisor/Firecracker isolation, distributed workers | planned |
 

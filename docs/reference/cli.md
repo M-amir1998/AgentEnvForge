@@ -17,7 +17,13 @@ Run `agentenv <command> --help` for full options. Global options (before the com
 | `agentenv runs show RUN_ID [--events]` | result, timings, provenance, optional event log |
 | `agentenv runs events RUN_ID` | event log |
 | `agentenv runs artifacts RUN_ID` | artifact names, sizes, hashes and location |
-| `agentenv cleanup [--run-id ID]` | remove sandboxes left by crashed processes |
+| `agentenv cleanup [--run-id ID] [--all]` | remove sandboxes left by processes that have exited (`--all`: also those of live or unknown owners) |
+| `agentenv experiment validate FILE [--preflight]` | validate an experiment file and everything it references; `--preflight` checks that agents are ready (e.g. Ollama model installed) |
+| `agentenv experiment inspect FILE [--workers N]` | resolved tasks, agents, hashes, warnings and the run order |
+| `agentenv experiment run FILE [--workers N] [--output DIR] [--overwrite] [--export-artifacts]` | execute the matrix and write the results directory |
+| `agentenv experiment report ID [--output DIR] [--overwrite] [--export-artifacts]` | regenerate an experiment's results directory from the database |
+| `agentenv experiments list [--limit N]` | recent experiments (`interrupted`: the owning process is gone) |
+| `agentenv experiments show ID` | status history, provenance and current results |
 
 `python -m agentenvforge` is equivalent to `agentenv`.
 
@@ -25,8 +31,10 @@ Run `agentenv <command> --help` for full options. Global options (before the com
 
 | Code | Meaning |
 |---|---|
-| 0 | success (`run`: completed **and** passed) |
-| 1 | `run` completed but the solution failed grading |
-| 2 | invalid input: task/agent spec, settings or usage |
-| 3 | infrastructure failure (build, sandbox, grader error, timeout, internal), or `doctor` found a failure |
+| 0 | success (`run`: completed **and** passed; `experiment run`: completed with valid results) |
+| 1 | `run`: completed but the solution failed grading; `experiment run`: completed, but with validity warnings (excluded runs, a failing reference, a passing baseline) |
+| 2 | invalid input: task/agent/experiment spec, settings, usage, or an output directory holding other results |
+| 3 | infrastructure failure (build, sandbox, grader error, timeout, internal), an agent that is not ready, an experiment that FAILED, or `doctor` found a failure |
 | 130 | cancelled (Ctrl+C / SIGTERM); cleanup was still performed |
+
+An agent that solves no task does not make `experiment run` fail: that is a result.

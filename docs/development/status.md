@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-10-05 (v0.1.0.dev0, after the local-LLM agent work). Keep this file in sync with reality in every PR.
+Last updated: 2026-10-17 (v0.1.0.dev0, Milestone 8: batch experiments, on branch `milestone/v0.2`). Keep this file in sync with reality in every PR.
 
 ## Implemented (tested)
 
@@ -16,9 +16,20 @@ Last updated: 2026-10-05 (v0.1.0.dev0, after the local-LLM agent work). Keep thi
 - Fresh grading sandbox with hidden assets and protected-path restoration.
 - Events, JSON/text logging with run context, per-run log files, secret redaction.
 - SQLite repository with migrations; local artifact store; manifest; patch capture.
-- CLI: `version`, `doctor`, `task validate|inspect|schema`, `run`, `runs list|show|events|artifacts`, `cleanup`.
-- Example tasks: `examples/basic` (hard, three bugs) and `examples/off-by-one` (easy), each
-  with hidden tests and a reference patch.
+- CLI: `version`, `doctor`, `task validate|inspect|schema`, `run`, `runs list|show|events|artifacts`,
+  `cleanup [--all]`, `experiment validate|inspect|run|report`, `experiments list|show`.
+- Batch experiments ([architecture](../architecture/experiments.md)): experiment schema v1,
+  matrix expansion with seeds and an interleaved order, bounded worker pool with
+  backpressure, failure isolation, cooperative cancellation, circuit breaker, experiment
+  state machine (property-tested), persistence of every planned run, `interrupted` status,
+  owner-aware orphan cleanup.
+- Experiment statistics ([ADR-0009](../adr/0009-experiment-statistics.md)) and the results
+  directory: JSON, CSV, Markdown report, headless plots, path sanitisation, regeneration.
+- Benchmarks: scaling, failure isolation (also in CI) and tiny local models, with committed
+  results ([benchmarks](../../benchmarks/README.md)).
+- Example tasks: `examples/basic` (hard, three bugs), `examples/lru-cache` (medium, two bugs)
+  and `examples/off-by-one` (easy), each with hidden tests and a reference patch; oracle,
+  failing, sleeper and crasher test agents.
 - Real LLM agent example on local Ollama models (`examples/agents/ollama`, experimental);
   python adapters loadable from a spec-relative `path`; `--agent-timeout` override.
 - First experiment with real models: `docs/experiments/2026-10-small-local-models.md`.
@@ -26,11 +37,14 @@ Last updated: 2026-10-05 (v0.1.0.dev0, after the local-LLM agent work). Keep thi
 
 ## In progress
 
-- Nothing. The v0.1 vertical slice is complete pending a first green CI run on GitHub.
+- Milestone 8 (batch experiments) is complete on `milestone/v0.2`, pending review and a green
+  CI run on GitHub. CI status could not be checked from the development machine, so `v0.1.0`
+  has not been tagged and the version is still `0.1.0.dev0`.
 
 ## Planned
 
-See [roadmap](../design/roadmap.md). Next: batch execution (v0.2).
+See [roadmap](../design/roadmap.md). Next: retries of infrastructure failures, resuming
+interrupted experiments, `agentenv reproduce`.
 
 ## Known limitations
 
@@ -39,11 +53,20 @@ See [roadmap](../design/roadmap.md). Next: batch execution (v0.2).
   after their session is revoked and sandbox destroyed.
 - Solution code runs inside the grading process and can, if malicious, tamper with it.
 - A second Ctrl+C during cleanup can interrupt cleanup; `agentenv cleanup` recovers.
-- Runs interrupted by SIGKILL remain in a non-terminal status (no automatic reconciliation yet).
-- The agent's configuration is recorded only by name in the manifest.
+- Runs interrupted by SIGKILL remain in a non-terminal status (no automatic reconciliation
+  yet); experiments are shown as `interrupted` when their process is gone.
+- For single runs, the agent's configuration is recorded only by name; experiment runs
+  record the full agent spec, seed and experiment link.
+- Experiments run on one machine; host-side agents share the CPU and the Python interpreter
+  (`workers > 1` with such agents triggers a warning). Interrupted experiments cannot be
+  resumed, and infrastructure failures are not retried.
+- Starting a sandbox cannot be cancelled mid-way; it is bounded by the start timeout.
 - Image tags of prebuilt images are resolved from the local cache if present, without re-pulling.
 - Requires GNU `timeout` and `sleep` in task images.
-- The Ollama agent is single-run-validated only (n=1 per model/task); no pass-rate statistics yet.
+- The Ollama agent results are small-sample: 3 seeded repetitions per model and task
+  (see the local-ollama benchmark report); intervals are wide.
+- `test_hanging_agent_times_out_and_is_cleaned_up` failed once without a reproducible cause
+  ([diagnosis](flaky-test-diagnosis.md)).
 
 ## Technical debt
 

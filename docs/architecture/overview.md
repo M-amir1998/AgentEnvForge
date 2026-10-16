@@ -7,6 +7,8 @@ in a structured, reproducible result.
 ```text
                  CLI (agentenv)            future: HTTP API, queue worker
                       │
+                      │      ExperimentExecutor: tasks x agents x repetitions, N worker threads,
+                      │      each running one RunOrchestrator at a time (see experiments.md)
                       ▼
              ┌──────────────────┐   protocols only
              │ RunOrchestrator  │──────────────┬───────────────┬───────────────┐
@@ -33,6 +35,9 @@ in a structured, reproducible result.
 | Where are results persisted? | `persistence/sqlite.py`, through the `RunRepository` protocol |
 | Where is cleanup handled? | `RunOrchestrator._cleanup` (always runs, in `finally`) and `agentenv cleanup` for orphans |
 | Where are failures classified? | `domain/failures.py` (`FailureInfo.from_exception`, `terminal_status_for`) |
+| Where are batches scheduled? | `execution/experiments.py` (`ExperimentExecutor`) on `execution/scheduler.py` ([experiments](experiments.md)) |
+| Where are results aggregated? | `analysis/outcomes.py` (classification), `analysis/aggregate.py`, `analysis/stats.py` |
+| Where are result files written? | `reporting/publish.py` (JSON, CSV, Markdown, plots), sanitised by `reporting/sanitize.py` |
 | Where are retries implemented? | Nowhere yet, deliberately: a retry is a *new run* (see [scaling](scaling.md)) |
 
 ## Design principles
@@ -48,4 +53,5 @@ in a structured, reproducible result.
 5. **Small explicit interfaces** at the four extension points: `SandboxBackend`,
    `AgentAdapter`, `Grader`, `ArtifactStore`.
 
-Continue with [components](components.md) and the [execution lifecycle](execution-lifecycle.md).
+Continue with [components](components.md), the [execution lifecycle](execution-lifecycle.md)
+and [experiments](experiments.md).

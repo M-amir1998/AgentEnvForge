@@ -58,13 +58,35 @@ it* from the rest. Paths are relative to `src/agentenvforge/`.
 - **Why:** the application service; the only code that sequences a run.
 - **Owns:** `RunOrchestrator` and `RunRequest` (`orchestrator.py`); host-side handling of
   the solution between agent and grader: protected-path restoration and artifact
-  selection (`solution.py`).
+  selection (`solution.py`); the image a task needs (`images.py`).
+- **Batch execution:** `ExperimentExecutor` (`experiments.py`) owns an experiment's
+  lifecycle and runs each planned run through a per-worker `RunOrchestrator`;
+  `BoundedScheduler` (`scheduler.py`) provides bounded threads, backpressure, failure
+  isolation and cooperative cancellation (`cancellation.py`); `experiment_results.py`
+  reads an experiment back from persistence ([experiments](experiments.md)).
+
+## Experiments (`experiments/`)
+
+- **Why:** describe an evaluation (tasks x agents x repetitions) once, reproducibly.
+- **Owns:** experiment schema v1 (`schema.py`); loading, validation, the definition hash
+  and concurrency warnings (`loader.py`); matrix expansion and seeds (`matrix.py`); the
+  experiment state machine (`status.py`); the reproducibility snapshot (`manifest.py`).
+
+## Analysis and reporting (`analysis/`, `reporting/`)
+
+- `analysis/outcomes.py`: one outcome per planned run, scored or excluded by stage.
+  `analysis/stats.py`: Wilson intervals, pass@k, percentiles. `analysis/aggregate.py`:
+  per-agent, per-task and per-cell summaries, validity checks ([ADR-0009](../adr/0009-experiment-statistics.md)).
+- `reporting/`: the results directory: JSON, CSV, Markdown report, headless plots, and
+  structural path sanitisation of everything exported.
 
 ## Recording (`events/`, `persistence/`, `artifacts.py`, `telemetry/`)
 
 - `RunRecorder` (`events/recorder.py`): the single write path for events, artifacts and
   the command log; applies redaction.
-- `RunRepository` + `SqliteRunRepository` (`persistence/`): run metadata and events.
+- `RunRepository` + `SqliteRunRepository` (`persistence/`): run metadata and events;
+  `ExperimentRepository` + `SqliteExperimentRepository`: experiments and their planned
+  runs. Both share one migrated `SqliteDatabase`.
 - `ArtifactStore` + `LocalArtifactStore` (`artifacts.py`): blob storage.
 - `telemetry/logging.py`: JSON/text logs with `run_id`/`task_id` context and per-run log
   files. `telemetry/redaction.py`: secret masking.
@@ -74,8 +96,11 @@ it* from the rest. Paths are relative to `src/agentenvforge/`.
 - `config/settings.py`: one immutable `Settings`, resolved once at the process edge
   ([precedence](../development/configuration.md)).
 - `diagnostics.py`: the checks behind `agentenv doctor`, returned as data.
+- `environment.py`: hardware and software facts for the experiment manifest (nothing
+  identifying). `processes.py`: owner tokens and liveness checks for orphan detection.
 
 ## CLI (`cli/`)
 
-- `app.py`: Typer commands and exit codes. `render.py`: all Rich output, including the
-  live `ProgressPrinter` event sink. `wiring.py`: the composition root.
+- `app.py`: Typer commands. `experiment_commands.py`: `experiment ...` and `experiments
+  ...`. `common.py`: exit codes and shared state. `render.py` and `experiment_render.py`:
+  all Rich output, including the live progress printers. `wiring.py`: the composition root.
