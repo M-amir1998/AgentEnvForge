@@ -141,6 +141,12 @@ class SandboxBackend(Protocol):
         """Create and start a sandbox. The caller owns its destruction."""
         ...
 
-    def remove_orphaned_sandboxes(self, run_id: str | None = None) -> list[str]:
-        """Remove sandboxes left behind by crashed processes; return their names."""
+    def remove_orphaned_sandboxes(
+        self, run_id: str | None = None, *, include_live: bool = False
+    ) -> list[str]:
+        """Remove sandboxes left behind by crashed processes; return their names.
+
+        With ``run_id``: every sandbox of that run. Without: only sandboxes whose owning
+        process no longer exists, unless ``include_live`` (then every sandbox).
+        """
         ...

@@ -25,6 +25,7 @@ from typing import Annotated
 
 import typer
 from rich.console import Console
+from rich.markup import escape
 
 from agentenvforge._version import __version__
 from agentenvforge.agents.base import AgentAdapter
@@ -128,17 +129,31 @@ def doctor(context: typer.Context) -> None:
 def cleanup(
     context: typer.Context,
     run_id: Annotated[str | None, typer.Option(help="Only remove sandboxes of this run.")] = None,
+    remove_all: Annotated[
+        bool,
+        typer.Option(
+            "--all",
+            help="Also remove sandboxes whose owner process is still running, belongs to "
+            "another host, or is unknown (created by AgentEnvForge < 0.2).",
+        ),
+    ] = False,
 ) -> None:
-    """Remove sandboxes left behind by crashed or killed processes."""
+    """Remove sandboxes left behind by crashed or killed processes.
+
+    By default only sandboxes whose owning process has exited are removed, so runs and
+    experiments executing in other terminals are never disturbed.
+    """
     backend = create_backend(_state(context).settings)
     try:
-        removed = backend.remove_orphaned_sandboxes(run_id)
+        removed = backend.remove_orphaned_sandboxes(run_id, include_live=remove_all)
     except AgentEnvForgeError as error:
-        error_console.print(f"[red]{error.message}[/red]")
+        error_console.print(f"[red]{escape(error.message)}[/red]")
         raise typer.Exit(EXIT_INFRASTRUCTURE) from error
     console.print(f"removed {len(removed)} sandbox(es)")
     for name in removed:
         console.print(f"  {name}")
+    if run_id is None and not remove_all:
+        console.print("[dim]sandboxes of live processes were kept; use --all to remove them[/dim]")
 
 
 # --------------------------------------------------------------------- tasks
@@ -207,8 +222,14 @@ def _resolve_agent(agent: str | None, agent_command: str | None) -> AgentAdapter
         )  # fmt: skip
     if agent_command is not None:
         return command_agent_from_string(agent_command)
-    environment = AgentEnvironment(environ=os.environ, write=console.print, prompt=input)
+    environment = AgentEnvironment(environ=os.environ, write=_print_plain, prompt=input)
     return resolve_agent(str(agent), environment)
+
+
+def _print_plain(text: str) -> None:
+    # Task instructions and attach hints are plain text: square brackets must not be
+    # interpreted as Rich markup.
+    console.print(text, markup=False, highlight=False)
 
 
 def _raise_cancelled(signum: int, _frame: FrameType | None) -> None:

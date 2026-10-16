@@ -146,7 +146,9 @@ class FakeBackend:
         self.sandboxes.append(sandbox)
         return sandbox
 
-    def remove_orphaned_sandboxes(self, run_id: str | None = None) -> list[str]:
+    def remove_orphaned_sandboxes(
+        self, run_id: str | None = None, *, include_live: bool = False
+    ) -> list[str]:
         return []
 
     def sandbox(self, role: SandboxRole) -> FakeSandbox:
