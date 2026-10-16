@@ -26,6 +26,7 @@ from agentenvforge.cli.common import EXIT_OK
 from agentenvforge.cli.wiring import open_services
 from agentenvforge.config.settings import load_settings
 from agentenvforge.domain.results import RunResult
+from agentenvforge.domain.status import RunStatus
 from agentenvforge.execution.experiments import Progress
 from agentenvforge.experiments.loader import load_experiment
 from agentenvforge.experiments.matrix import RunCombination
@@ -107,6 +108,21 @@ def test_mixed_batch_isolates_failures_and_cleans_up(agentenv_home: Path, tmp_pa
     assert (output / "report.md").is_file()
 
 
+class QuietObserver:
+    def preparing(self, message: str) -> None: ...
+
+    def run_finished(
+        self,
+        combination: RunCombination,
+        run_id: str | None,
+        outcome: Outcome,
+        result: RunResult | None,
+        progress: Progress,
+    ) -> None: ...
+
+    def cancelling(self, reason: str) -> None: ...
+
+
 def test_cancelled_batch_ends_active_runs_and_removes_their_sandboxes(
     agentenv_home: Path, tmp_path: Path
 ) -> None:
@@ -121,40 +137,43 @@ def test_cancelled_batch_ends_active_runs_and_removes_their_sandboxes(
     )
     services = open_services(load_settings(cli_overrides={"home": agentenv_home}))
     token = CancellationToken()
+    cancelled_at: list[float] = []
 
-    class CancelOnceRunning:
-        """Cancels as soon as the batch is running (both workers busy with sleepers)."""
+    def cancel_once_both_agents_run() -> None:
+        # Not on a timer: on a fresh machine, building the image alone can take longer.
+        deadline = time.monotonic() + 600
+        while time.monotonic() < deadline and not token.cancelled:
+            active = [
+                run
+                for run in services.repository.list_runs(limit=10)
+                if run.status is RunStatus.RUNNING_AGENT
+            ]
+            if len(active) == 2:
+                cancelled_at.append(time.monotonic())
+                token.cancel("test cancellation")
+                return
+            time.sleep(0.2)
 
-        def preparing(self, message: str) -> None:
-            if "preparing the image" in message:
-                threading.Timer(8.0, token.cancel, args=("test cancellation",)).start()
-
-        def run_finished(
-            self,
-            combination: RunCombination,
-            run_id: str | None,
-            outcome: Outcome,
-            result: RunResult | None,
-            progress: Progress,
-        ) -> None: ...
-
-        def cancelling(self, reason: str) -> None: ...
-
-    started = time.monotonic()
+    watcher = threading.Thread(target=cancel_once_both_agents_run, daemon=True)
+    watcher.start()
     try:
         outcome = services.experiment_executor().execute(
-            loaded, workers=2, cancellation=token, observer=CancelOnceRunning()
+            loaded, workers=2, cancellation=token, observer=QuietObserver()
         )
+        finished_at = time.monotonic()
         stored = services.experiments.get_experiment(outcome.experiment_id)
     finally:
+        token.cancel("test finished")  # stops the watcher if the batch ended another way
+        watcher.join()
         services.close()
-    elapsed = time.monotonic() - started
 
     counts = outcome.summary.counts
+    assert cancelled_at, "the two agents were never running at the same time"
     assert outcome.status is ExperimentStatus.CANCELLED
-    assert counts.cancelled == 2, counts  # the two active runs
+    assert counts.cancelled == 2, counts  # exactly the two active runs
     assert counts.not_started == 4 and counts.planned == 6
-    assert elapsed < 120, f"cancellation took {elapsed:.0f}s (agent budget is 300s)"
+    stopped_in = finished_at - cancelled_at[0]
+    assert stopped_in < 60, f"cancellation took {stopped_in:.0f}s (agent budget is 300s)"
     assert stored is not None
     run_ids = [entry.run_id for entry in stored.entries if entry.run_id]
     assert len(run_ids) == 2 and leftover_containers(run_ids) == []
