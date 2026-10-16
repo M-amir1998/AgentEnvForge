@@ -104,6 +104,11 @@ MIGRATIONS: tuple[str, ...] = (
     );
     CREATE INDEX experiment_runs_run_id ON experiment_runs (run_id);
     """,
+    # 3: where the experiment file was, so `agentenv experiment report` can copy the original
+    #    definition and sanitise paths relative to it. Local only: never exported.
+    """
+    ALTER TABLE experiments ADD COLUMN definition_path TEXT;
+    """,
 )
 
 

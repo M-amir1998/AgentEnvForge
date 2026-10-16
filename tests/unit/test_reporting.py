@@ -199,3 +199,22 @@ def test_sanitizer_rewrites_nested_paths_most_specific_first(tmp_path: Path) -> 
     assert cleaned["b"] == ["see $AGENTENV_HOME/runs", 3, None]
     assert cleaned["c"] == ["~/elsewhere"]
     assert sanitizer.text("benchmarks and words") == "benchmarks and words"
+
+
+def test_original_definition_is_copied_only_while_it_is_unchanged(
+    executed: tuple[Harness, StoredExperiment, Path],
+) -> None:
+    harness, stored, definition = executed
+    original = definition.read_text(encoding="utf-8")
+    output = harness.tmp / "results"
+    publish(harness, stored, output, definition=definition)
+    assert (output / "experiment.yaml").read_text(encoding="utf-8") == original
+
+    definition.write_text(original.replace("repetitions: 2", "repetitions: 3"), encoding="utf-8")
+    publish(harness, stored, output, definition=definition)  # edited since: keep the copy
+    assert (output / "experiment.yaml").read_text(encoding="utf-8") == original
+
+    fresh = harness.tmp / "fresh"
+    publish(harness, stored, fresh, definition=definition)  # no copy to fall back on
+    reconstructed = (fresh / "experiment.yaml").read_text(encoding="utf-8")
+    assert reconstructed.startswith("# Reconstructed") and "repetitions: 2" in reconstructed

@@ -51,6 +51,8 @@ class NewExperiment:
     manifest: ExperimentManifest
     output_dir: str | None
     combinations: Sequence[RunCombination]
+    definition_path: str | None = None
+    """Absolute path of the experiment file (local bookkeeping; never exported)."""
 
 
 @dataclass(frozen=True, slots=True)
@@ -68,6 +70,7 @@ class ExperimentRecord:
     workers: int
     owner: str
     output_dir: str | None
+    definition_path: str | None = None
 
 
 @dataclass(frozen=True, slots=True)

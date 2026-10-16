@@ -101,6 +101,28 @@ def summarize_experiment(
     return summarize(facts, observations(stored, runs), generated_at=generated_at)
 
 
+FAILURE_WARNING_PREFIX = "experiment failed: "
+
+
+def with_failure(summary: ExperimentSummary, failure: str) -> ExperimentSummary:
+    """Mark ``summary`` as belonging to an experiment that FAILED (``failure`` says why)."""
+    warnings = (f"{FAILURE_WARNING_PREFIX}{failure}", *summary.warnings)
+    return summary.model_copy(update={"warnings": warnings, "results_valid": False})
+
+
+def resummarize(
+    stored: StoredExperiment, runs: RunRepository, *, generated_at: datetime
+) -> ExperimentSummary:
+    """Recompute the summary of a persisted experiment (``experiment report``,
+    ``experiments show``), keeping why it failed, which only the executor knew."""
+    summary = summarize_experiment(stored, runs, generated_at=generated_at)
+    previous = stored.summary.warnings if stored.summary is not None else ()
+    for warning in previous:
+        if warning.startswith(FAILURE_WARNING_PREFIX):
+            summary = with_failure(summary, warning.removeprefix(FAILURE_WARNING_PREFIX))
+    return summary
+
+
 def _model_name(provenance: Mapping[str, object], spec: Mapping[str, object]) -> str | None:
     model = provenance.get("model")
     if isinstance(model, str):

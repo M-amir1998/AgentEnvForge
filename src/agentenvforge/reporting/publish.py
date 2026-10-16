@@ -32,6 +32,7 @@ from agentenvforge.analysis.models import ExperimentSummary
 from agentenvforge.artifacts import ArtifactStore
 from agentenvforge.domain.failures import AgentEnvForgeError
 from agentenvforge.execution.experiment_results import observations
+from agentenvforge.experiments.schema import ExperimentSpec
 from agentenvforge.persistence.experiment_repository import StoredExperiment
 from agentenvforge.persistence.repository import RunRepository
 from agentenvforge.reporting.export import (
@@ -102,14 +103,13 @@ def publish_results(
     """Write the results directory for ``stored`` (replacing files of a previous publish)."""
     try:
         directory.mkdir(parents=True, exist_ok=True)
-        _remove_previous_outputs(directory)
         manifest = stored.manifest
+        definition = _definition_text(directory, stored, definition_source)
+        _remove_previous_outputs(directory)
         observed = observations(stored, runs)
         rows = build_rows(stored.record.experiment_id, manifest, observed, runs)
 
-        _write_definition(
-            directory / DEFINITION_FILE, manifest.definition, definition_source, sanitizer
-        )
+        (directory / DEFINITION_FILE).write_text(sanitizer.text(definition), encoding="utf-8")
         write_json(directory / "manifest.json", manifest.model_dump(mode="json"), sanitizer)
         environment = manifest.environment.model_dump(mode="json") if manifest.environment else {}
         write_json(directory / "environment.json", environment, sanitizer)
@@ -153,16 +153,28 @@ def _remove_previous_outputs(directory: Path) -> None:
             shutil.rmtree(directory / name)
 
 
-def _write_definition(
-    target: Path,
-    definition: dict[str, object],
-    source: Path | None,
-    sanitizer: PathSanitizer,
-) -> None:
-    """The original file (comments and all) when available, else the stored definition."""
-    if source is not None and source.is_file():
-        text = source.read_text(encoding="utf-8")
-    else:
-        text = "# Reconstructed from the database (the original file was not available).\n"
-        text += yaml.safe_dump(definition, sort_keys=False, allow_unicode=True)
-    target.write_text(sanitizer.text(text), encoding="utf-8")
+def _definition_text(directory: Path, stored: StoredExperiment, source: Path | None) -> str:
+    """The definition exactly as it was run, comments included, from the first of:
+
+    1. the original file, if it still defines the same experiment (it may have been edited
+       since; then it is not used),
+    2. the copy a previous publish of this experiment wrote,
+    3. a reconstruction from the definition stored in the database.
+    """
+    manifest = stored.manifest
+    if source is not None:
+        try:
+            text = source.read_text(encoding="utf-8")
+            document = yaml.safe_load(text)
+            if (
+                ExperimentSpec.model_validate(document).model_dump(mode="json")
+                == manifest.definition
+            ):
+                return text
+        except (OSError, yaml.YAMLError, ValueError):
+            pass  # unreadable or changed: fall through to the other sources
+    previous_copy = directory / DEFINITION_FILE
+    if _previous_experiment(directory) == stored.record.experiment_id and previous_copy.is_file():
+        return previous_copy.read_text(encoding="utf-8")
+    header = "# Reconstructed from the database (the original file was not available).\n"
+    return header + yaml.safe_dump(manifest.definition, sort_keys=False, allow_unicode=True)

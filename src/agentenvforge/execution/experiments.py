@@ -36,7 +36,7 @@ from agentenvforge.domain.ids import new_id, new_run_id
 from agentenvforge.domain.manifest import ExperimentLink
 from agentenvforge.domain.results import RunResult
 from agentenvforge.environment import capture_host_environment
-from agentenvforge.execution.experiment_results import summarize_experiment
+from agentenvforge.execution.experiment_results import summarize_experiment, with_failure
 from agentenvforge.execution.images import task_image
 from agentenvforge.execution.orchestrator import RunOrchestrator, RunRequest
 from agentenvforge.execution.scheduler import BoundedScheduler, Completed
@@ -262,6 +262,7 @@ class ExperimentExecutor:
                 manifest=manifest,
                 output_dir=output_dir,
                 combinations=combinations,
+                definition_path=str(loaded.path),
             )
         )
         return _Execution(
@@ -437,10 +438,7 @@ class ExperimentExecutor:
             stored, self._runs, generated_at=utc_now(), status=terminal.value
         )
         if state.failure is not None:
-            summary = summary.model_copy(
-                update={"warnings": (f"experiment failed: {state.failure}", *summary.warnings),
-                        "results_valid": False}
-            )  # fmt: skip
+            summary = with_failure(summary, state.failure)
         self._experiments.store_summary(state.experiment_id, summary, stored.record.output_dir)
         self._enter(state, terminal)
         return ExperimentOutcome(

@@ -49,7 +49,8 @@ class SqliteExperimentRepository:
             connection.execute(
                 "INSERT INTO experiments (experiment_id, spec_id, name, status, created_at, "
                 "updated_at, planned_runs, workers, definition_hash, owner, history_json, "
-                "manifest_json, output_dir) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "manifest_json, output_dir, definition_path) "
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 (
                     experiment.experiment_id,
                     experiment.spec_id,
@@ -64,6 +65,7 @@ class SqliteExperimentRepository:
                     _history_json(history),
                     experiment.manifest.model_dump_json(),
                     experiment.output_dir,
+                    experiment.definition_path,
                 ),
             )
             connection.executemany(
@@ -145,6 +147,7 @@ class SqliteExperimentRepository:
             workers=row["workers"],
             owner=row["owner"],
             output_dir=row["output_dir"],
+            definition_path=row["definition_path"],
         )
 
     @staticmethod
