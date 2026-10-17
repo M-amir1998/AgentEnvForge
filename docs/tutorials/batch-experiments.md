@@ -134,10 +134,12 @@ How to read the numbers:
 - **Intervals** are wide at small n: 2/3 is "somewhere between 21% and 94%". Do not rank
   agents whose intervals overlap.
 - **identical**: all repetitions of a cell produced the same outcome and the same patch.
-  The agent is deterministic there, so the repetitions count as one observation and no
+  That is what a deterministic agent does, but a sampled model that converges on the same
+  fix every time looks the same. Either way the repetitions count as one observation and no
   interval is shown.
 - **pass@k** (k = repetitions) is the fraction of tasks solved at least once in k
-  attempts. It is not shown for deterministic agents or incomplete cells.
+  attempts. It is not shown when every cell's repetitions were identical, or for
+  incomplete cells.
 - **`>=` on durations**: some runs hit their time budget, so the true value is larger.
 
 The full methodology is in [ADR-0009](../adr/0009-experiment-statistics.md).

@@ -195,7 +195,7 @@ def _by_agent(summary: ExperimentSummary) -> list[str]:
                 a.role,
                 f"`{a.model or a.adapter}`",
                 str(a.counts.scored),
-                _rate(a.success) + (" (deterministic)" if a.deterministic else ""),
+                _rate(a.success) + (" (identical repetitions)" if a.deterministic else ""),
                 _pct(a.task_mean_success),
                 _pass_at_k(a),
                 str(a.counts.agent_timeout),
@@ -294,7 +294,8 @@ def _method() -> list[str]:
         "- Failures after the agent started that prevent grading (e.g. the solution breaks "
         "the test configuration) count as failures (`post_agent_error`).",
         "- Cells whose repetitions produced the same outcome *and* the same patch are marked "
-        "identical; deterministic agents get no interval and no pass@k.",
+        "identical and count as one observation (no interval, no pass@k): a deterministic "
+        "agent looks like this, and so does a sampled one that converges on the same patch.",
         "- pass@k uses the unbiased estimator of Chen et al. (2021), averaged over tasks.",
         f"- p95 is reported only for at least {MIN_RUNS_FOR_P95} runs.",
         "",

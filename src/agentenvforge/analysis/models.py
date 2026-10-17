@@ -145,6 +145,9 @@ class AgentSummary(_Model):
     the same number of scored runs)."""
     tasks_without_scored_runs: tuple[str, ...] = ()
     deterministic: bool = False
+    """*Observed*: every repeated cell had identical repetitions (same outcome and patch).
+    A deterministic agent looks like this, but so does a sampled one that converges on the
+    same patch every time; both are counted conservatively, as one observation per task."""
     pass_at_k: PassAtK | None = None
     run_seconds: Distribution | None = None
     agent_seconds: Distribution | None = None

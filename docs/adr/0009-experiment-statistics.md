@@ -42,7 +42,7 @@ is reported next to it. Task rates pool subject agents only.
 **Identical repetitions.** When all scored repetitions of a cell have the same outcome *and*
 the same solution patch (SHA-256), the cell is marked identical: the repetitions are
 effectively one observation, so no interval is shown. An agent whose repeated cells are all
-identical is marked deterministic.
+identical is marked deterministic (an observation, reported as "identical repetitions").
 
 **pass@k** uses the unbiased estimator of Chen et al. (2021),
 `1 - C(n - c, k) / C(n, k)` per task, averaged over tasks, with k = the number of
@@ -77,6 +77,10 @@ are shown, and the reader can judge.
 
 - Repetitions of a cell are treated as independent. Seeds, caching and server state can
   correlate them.
+- A sampled agent that converges on the same patch in every repetition (seen with Claude
+  Sonnet 5.5 on the example tasks) cannot be told apart from a deterministic one, and is
+  also counted as one observation per task. This understates its evidence rather than
+  overstating a deterministic agent's.
 - The interval of a pooled rate treats runs as exchangeable across tasks; task difficulty
   varies, so the interval is optimistic for "this agent on tasks like these".
 - No multiple-comparison correction, effect sizes or paired tests between agents.

@@ -206,7 +206,10 @@ def _agent(
 
     note = "pooled over this experiment's tasks (conditional on this task mix)"
     if deterministic:
-        note = "deterministic: repetitions were identical, so no interval"
+        note = (
+            "identical repetitions in every repeated task (same outcome and patch): counted "
+            "as one observation per task, so no interval"
+        )
     results = [o.result for o in scored if o.result is not None]
     durations = [r.duration_ms / 1000 for r in results]
     agent_seconds = [s for r in results if (s := _agent_seconds(r)) is not None]
@@ -236,7 +239,7 @@ def _pass_at_k(cells: list[CellSummary], repetitions: int, deterministic: bool) 
     if k < 2:
         return None
     if deterministic:
-        return PassAtK(k=k, value=None, note="deterministic agent: pass@k equals pass@1")
+        return PassAtK(k=k, value=None, note="identical repetitions: pass@k equals pass@1")
     short = [c.task_id for c in cells if c.success.trials < k]
     if short:
         return PassAtK(k=k, value=None, note=f"fewer than {k} scored runs on: {', '.join(short)}")
