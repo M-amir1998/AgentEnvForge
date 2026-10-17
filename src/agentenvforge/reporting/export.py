@@ -170,13 +170,29 @@ def export_run_evidence(
                 continue
             target = destination / row.run_id / name
             target.parent.mkdir(parents=True, exist_ok=True)
-            if name.endswith((".json", ".jsonl")):
-                text = sanitizer.text(content.decode("utf-8", errors="replace"))
-                target.write_text(text, encoding="utf-8")
+            if not name.endswith((".json", ".jsonl")):
+                target.write_bytes(content)  # the patch stays byte-exact (workspace paths only)
+                copied += 1
+                continue
+            text = content.decode("utf-8", errors="replace")
+            if name.endswith(".jsonl"):
+                lines = text.splitlines()
+                text = "".join(f"{_sanitized_json(line, sanitizer)}\n" for line in lines)
             else:
-                target.write_bytes(content)
+                text = _sanitized_json(text, sanitizer, indent=2) + "\n"
+            target.write_text(text, encoding="utf-8")
             copied += 1
     return copied
+
+
+def _sanitized_json(text: str, sanitizer: PathSanitizer, *, indent: int | None = None) -> str:
+    """Sanitise a JSON document structurally: inside serialised JSON, Windows paths are
+    escaped (C:\\\\Users) and a text replacement of the native spelling would miss them."""
+    try:
+        data = json.loads(text)
+    except ValueError:
+        return sanitizer.text(text)  # not JSON after all: best effort on the text
+    return json.dumps(sanitizer.data(data), indent=indent, ensure_ascii=False)
 
 
 def copy_definition(source: Path, destination: Path) -> Path:

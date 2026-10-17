@@ -32,10 +32,13 @@ class PathSanitizer:
         flags = re.IGNORECASE if sys.platform == "win32" else 0
         # Only absolute spellings: a bare relative name such as "benchmarks" would also match
         # unrelated words. Longest first, so nested directories map to the most specific one.
+        # The JSON-escaped spelling (C:\\Users\\...) is included for text that is serialised
+        # JSON after all; structured data should still go through data().
         spellings = {
             (spelling, replacement)
             for path, replacement in replacements
-            for spelling in (str(path.resolve()), path.resolve().as_posix())
+            for native in (str(path.resolve()), path.resolve().as_posix())
+            for spelling in (native, native.replace("\\", "\\\\"))
         }
         self._patterns: list[tuple[re.Pattern[str], str]] = [
             (re.compile(re.escape(spelling), flags), replacement)

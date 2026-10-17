@@ -107,14 +107,22 @@ def test_result_files_contain_no_host_paths(
     executed: tuple[Harness, StoredExperiment, Path],
 ) -> None:
     harness, stored, _ = executed
+    # Agents' own artifacts can mention host paths, e.g. a CLI reporting its working
+    # directory. Inside JSON, Windows paths are escaped (C:\\Users\\...).
+    run_id = str(stored.entries[0].run_id)
+    leaky = {"type": "system", "cwd": str(harness.tmp / "scratch"), "home": str(Path.home())}
+    harness.artifacts.put(run_id, "agent/transcript.jsonl", (json.dumps(leaky) + "\n").encode())
     output = harness.tmp / "results"
     publish(harness, stored, output, export_artifacts=True)
     text = all_text(output)
-    for secret in (str(harness.tmp), harness.tmp.as_posix(), str(Path.home())):
-        if sys.platform == "win32":
-            assert secret.lower() not in text.lower(), secret
-        else:
-            assert secret not in text, secret
+    for path in (str(harness.tmp), harness.tmp.as_posix(), str(Path.home())):
+        for secret in (path, json.dumps(path)[1:-1]):  # raw and JSON-escaped spellings
+            if sys.platform == "win32":
+                assert secret.lower() not in text.lower(), secret
+            else:
+                assert secret not in text, secret
+    exported = output / "artifacts" / run_id / "agent" / "transcript.jsonl"
+    assert json.loads(exported.read_text(encoding="utf-8"))["home"] == "~"
 
 
 def test_republishing_replaces_own_files_and_keeps_unrelated_ones(
