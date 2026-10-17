@@ -13,7 +13,7 @@ import sqlite3
 from contextlib import AbstractContextManager
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 from agentenvforge.artifacts import ArtifactRecord
 from agentenvforge.domain.events import EventType, ExecutionEvent
@@ -51,6 +51,12 @@ class SqliteRunRepository:
         """Close the database if this repository opened it."""
         if self._owns_database:
             self._database.close()
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
 
     @property
     def schema_version(self) -> int:

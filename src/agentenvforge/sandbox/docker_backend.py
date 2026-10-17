@@ -118,6 +118,23 @@ _DOCKER_ERRORS = _transport_errors()
 _START_ERRORS: tuple[type[BaseException], ...] = (SandboxError, *_DOCKER_ERRORS)
 
 
+def _close_stream(stream: object) -> None:
+    """Close an exec output stream. The SDK hijacks the HTTP connection for it and leaves
+    that socket open otherwise ("the caller is responsible for closing the response").
+    Best effort: the daemon may already have closed its side, and not every transport
+    supports shutting a socket down (Windows named pipes)."""
+    # CancellableStream.close() shuts the socket down and marks it closed, but the HTTP
+    # response still holds a file object on it, which keeps the descriptor open until the
+    # response is closed too.
+    response = getattr(stream, "_response", None)
+    for closer in (getattr(stream, "close", None), getattr(response, "close", None)):
+        if callable(closer):
+            try:
+                closer()
+            except Exception:  # closing must never mask the command's outcome
+                logger.debug("could not close an exec output stream", exc_info=True)
+
+
 class _BoundedBuffer:
     """Collects stream output up to a byte limit, recording whether anything was dropped."""
 
@@ -197,13 +214,16 @@ class DockerSandbox:
                 workdir=request.cwd,
             )["Id"]
             watchdog.start()
-            for out_chunk, err_chunk in self._client.api.exec_start(
-                exec_id, stream=True, demux=True
-            ):
-                if out_chunk:
-                    stdout.append(out_chunk)
-                if err_chunk:
-                    stderr.append(err_chunk)
+            # Streamed (not buffered) so the output limit holds however much is printed.
+            output = self._client.api.exec_start(exec_id, stream=True, demux=True)
+            try:
+                for out_chunk, err_chunk in output:
+                    if out_chunk:
+                        stdout.append(out_chunk)
+                    if err_chunk:
+                        stderr.append(err_chunk)
+            finally:
+                _close_stream(output)
             exit_code = self._wait_for_exit_code(exec_id)
         except _DOCKER_ERRORS as error:
             if not watchdog_fired.is_set():
@@ -323,6 +343,7 @@ class DockerSandboxBackend:
 
     @cached_property
     def _client(self) -> docker.DockerClient:
+        client: docker.DockerClient | None = None
         try:
             client = (
                 docker.DockerClient(base_url=self._docker_host)
@@ -331,10 +352,18 @@ class DockerSandboxBackend:
             )
             client.ping()
         except _DOCKER_ERRORS as error:
+            if client is not None:
+                client.close()  # do not leak the connection of a failed ping
             raise SandboxError(
                 f"cannot connect to the Docker daemon ({_DAEMON_HINT}): {error}"
             ) from error
         return client
+
+    def close(self) -> None:
+        """Release the Docker client's connections (it is created again if used later)."""
+        client = self.__dict__.pop("_client", None)
+        if client is not None:
+            client.close()
 
     def describe(self) -> BackendInfo:
         """Return Docker server version information and the resources available to it."""

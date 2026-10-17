@@ -12,6 +12,7 @@ import json
 import os
 import threading
 import time
+from contextlib import closing
 from pathlib import Path
 
 import docker
@@ -67,14 +68,14 @@ def spec_agent(directory: Path, agent_id: str, spec: str, *extra: str) -> str:
 
 
 def leftover_containers(run_ids: list[str]) -> list[str]:
-    client = docker.from_env()
-    return [
-        f"{container.name} ({container.status})"
-        for run_id in run_ids
-        for container in client.containers.list(
-            all=True, filters={"label": f"{LABEL_RUN_ID}={run_id}"}
-        )
-    ]
+    with closing(docker.from_env()) as client:
+        return [
+            f"{container.name} ({container.status})"
+            for run_id in run_ids
+            for container in client.containers.list(
+                all=True, filters={"label": f"{LABEL_RUN_ID}={run_id}"}
+            )
+        ]
 
 
 def test_mixed_batch_isolates_failures_and_cleans_up(agentenv_home: Path, tmp_path: Path) -> None:

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -59,7 +59,7 @@ class Harness:
 
 
 @pytest.fixture
-def harness(tmp_path: Path) -> Harness:
+def harness(tmp_path: Path) -> Iterator[Harness]:
     backend = FakeBackend(
         root=tmp_path / "sandboxes",
         handlers={
@@ -77,7 +77,8 @@ def harness(tmp_path: Path) -> Harness:
         artifact_store=artifacts,
         settings=OrchestratorSettings(work_dir=work_dir, adapter_grace_seconds=0.2),
     )
-    return Harness(backend, repository, artifacts, orchestrator, work_dir)
+    yield Harness(backend, repository, artifacts, orchestrator, work_dir)
+    repository.close()
 
 
 def solver() -> CommandAgent:

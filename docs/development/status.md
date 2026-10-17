@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-10-17 (v0.1.0.dev0, Milestone 8: batch experiments, on branch `milestone/v0.2`). Keep this file in sync with reality in every PR.
+Last updated: 2026-10-17 (release 0.2.0: single runs and batch experiments). Keep this file in sync with reality in every PR.
 
 ## Implemented (tested)
 
@@ -36,13 +36,14 @@ Last updated: 2026-10-17 (v0.1.0.dev0, Milestone 8: batch experiments, on branch
   experimental): sandbox-only tools over a per-run MCP server, isolation from the user's
   Claude Code configuration, usage guard.
 - First experiment with real models: `docs/experiments/2026-10-small-local-models.md`.
-- 188 tests (unit, Docker integration, e2e). Strict mypy. Ruff.
+- 612 tests: 595 unit and source tests, 17 Docker integration and end-to-end tests. Strict
+  mypy. Ruff. CI on Linux (Python 3.12-3.14), Windows and macOS.
 
 ## In progress
 
-- Milestone 8 (batch experiments) is complete on `milestone/v0.2`, pending review and a green
-  CI run on GitHub. CI status could not be checked from the development machine, so `v0.1.0`
-  has not been tagged and the version is still `0.1.0.dev0`.
+- Nothing. Version 0.2.0 is complete. CI's jobs were reproduced in Linux containers (Python
+  3.12, 3.13 and 3.14, the Docker job against a real daemon) after resource leaks made CI
+  fail outside Windows; the green run on GitHub is the last check before tagging `v0.2.0`.
 
 ## Planned
 

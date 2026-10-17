@@ -47,7 +47,7 @@ from agentenvforge.experiments.status import ExperimentStateMachine, ExperimentS
 from agentenvforge.persistence.experiment_repository import ExperimentRepository, NewExperiment
 from agentenvforge.persistence.repository import RunRepository
 from agentenvforge.processes import Owner
-from agentenvforge.sandbox.base import SandboxBackend
+from agentenvforge.sandbox.base import SandboxBackend, close_backend
 
 logger = logging.getLogger(__name__)
 
@@ -167,6 +167,24 @@ class ExperimentExecutor:
         self._backend_factory = backend_factory
         self._orchestrator_factory = orchestrator_factory
         self._local = threading.local()
+        self._backends: list[SandboxBackend] = []
+        self._backends_lock = threading.Lock()
+
+    def _new_backend(self) -> SandboxBackend:
+        """A backend from the factory, closed when the experiment ends."""
+        backend = self._backend_factory()
+        with self._backends_lock:
+            self._backends.append(backend)
+        return backend
+
+    def _close_backends(self) -> None:
+        with self._backends_lock:
+            backends, self._backends = self._backends, []
+        for backend in backends:
+            try:
+                close_backend(backend)
+            except Exception:  # closing must never hide the experiment's own outcome
+                logger.warning("could not close a sandbox backend", exc_info=True)
 
     def execute(
         self,
@@ -192,6 +210,8 @@ class ExperimentExecutor:
             cancellation.cancel(f"internal error: {type(error).__name__}")
             state.failure = f"{type(error).__name__}: {error}"
             logger.exception("experiment %s failed", state.experiment_id)
+        finally:
+            self._close_backends()  # every run has ended (the scheduler waited for them)
         return self._finalize(state)
 
     # ------------------------------------------------------------------- lifecycle
@@ -284,7 +304,7 @@ class ExperimentExecutor:
         """Check everything that would make *every* run fail, before any run starts."""
         observer.preparing("checking the sandbox backend")
         try:
-            backend = self._backend_factory()
+            backend = self._new_backend()
             environment = capture_host_environment(backend.describe())
         except AgentEnvForgeError as error:
             state.failure = f"sandbox backend unavailable: {error.message}"
@@ -351,7 +371,7 @@ class ExperimentExecutor:
         """Runs in a worker thread: one planned run through the single-run orchestrator."""
         orchestrator = getattr(self._local, "orchestrator", None)
         if orchestrator is None:
-            orchestrator = self._orchestrator_factory(self._backend_factory())
+            orchestrator = self._orchestrator_factory(self._new_backend())
             self._local.orchestrator = orchestrator
         resolved = state.loaded.agent(combination.agent_id)
         run_id = new_run_id()

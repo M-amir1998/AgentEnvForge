@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import json
 from collections.abc import Callable
+from contextlib import closing
 from pathlib import Path
 
 import docker
@@ -34,10 +35,9 @@ def agentenv(*arguments: str) -> Result:
 
 
 def latest_result(home: Path) -> dict[str, object]:
-    repository = SqliteRunRepository(home / "agentenv.db")
-    (summary, *_) = repository.list_runs(limit=1)
-    stored = repository.get_run(summary.run_id)
-    repository.close()
+    with SqliteRunRepository(home / "agentenv.db") as repository:
+        (summary, *_) = repository.list_runs(limit=1)
+        stored = repository.get_run(summary.run_id)
     assert stored is not None and stored.result is not None
     return stored.result.model_dump(mode="json")
 
@@ -48,17 +48,16 @@ def assert_no_sandboxes_left(home: Path) -> None:
     Scoped to this test's own runs: other processes (another terminal, a long experiment)
     may legitimately have live sandboxes on the same daemon at the same time.
     """
-    repository = SqliteRunRepository(home / "agentenv.db")
-    run_ids = [run.run_id for run in repository.list_runs(limit=1000)]
-    repository.close()
-    client = docker.from_env()
-    leftovers = [
-        container
-        for run_id in run_ids
-        for container in client.containers.list(
-            all=True, filters={"label": f"{LABEL_RUN_ID}={run_id}"}
-        )
-    ]
+    with SqliteRunRepository(home / "agentenv.db") as repository:
+        run_ids = [run.run_id for run in repository.list_runs(limit=1000)]
+    with closing(docker.from_env()) as client:
+        leftovers = [
+            container
+            for run_id in run_ids
+            for container in client.containers.list(
+                all=True, filters={"label": f"{LABEL_RUN_ID}={run_id}"}
+            )
+        ]
     assert leftovers == [], [(container.name, container.status) for container in leftovers]
 
 

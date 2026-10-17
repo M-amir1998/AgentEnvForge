@@ -5,6 +5,7 @@ from __future__ import annotations
 import sqlite3
 import threading
 import time
+from collections.abc import Iterator
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -125,8 +126,13 @@ def _event(run_id: str, sequence: int) -> ExecutionEvent:
     )
 
 
-def test_repository_round_trip(tmp_path: Path) -> None:
-    repository = SqliteRunRepository(tmp_path / "db.sqlite")
+@pytest.fixture
+def repository(tmp_path: Path) -> Iterator[SqliteRunRepository]:
+    with SqliteRunRepository(tmp_path / "db.sqlite") as opened:
+        yield opened
+
+
+def test_repository_round_trip(repository: SqliteRunRepository) -> None:
     repository.create_run(_new_run("run_a"))
     repository.update_status("run_a", RunStatus.RUNNING_AGENT, datetime.now(UTC))
     repository.append_event(_event("run_a", 1))
@@ -153,8 +159,7 @@ def test_repository_round_trip(tmp_path: Path) -> None:
     assert repository.get_run("missing") is None
 
 
-def test_repository_filters_and_orders_runs(tmp_path: Path) -> None:
-    repository = SqliteRunRepository(tmp_path / "db.sqlite")
+def test_repository_filters_and_orders_runs(repository: SqliteRunRepository) -> None:
     for index, task in enumerate(["x", "y", "x"]):
         repository.create_run(_new_run(f"run_{index}", task_id=task))
         time.sleep(0.002)
@@ -165,8 +170,8 @@ def test_repository_filters_and_orders_runs(tmp_path: Path) -> None:
 
 def test_migrations_are_applied_once(tmp_path: Path) -> None:
     SqliteRunRepository(tmp_path / "db.sqlite").close()
-    reopened = SqliteRunRepository(tmp_path / "db.sqlite")
-    assert reopened.schema_version == len(MIGRATIONS)
+    with SqliteRunRepository(tmp_path / "db.sqlite") as reopened:
+        assert reopened.schema_version == len(MIGRATIONS)
 
 
 def test_existing_version_1_database_is_upgraded_without_losing_runs(tmp_path: Path) -> None:
@@ -196,11 +201,11 @@ def test_existing_version_1_database_is_upgraded_without_losing_runs(tmp_path: P
     assert {"runs", "events", "artifacts", "experiments", "experiment_runs"} <= tables
     assert repository.get_run("run_old") is not None
     database.close()
-    assert SqliteDatabase(path).schema_version == len(MIGRATIONS)  # idempotent on reopen
+    with SqliteDatabase(path) as reopened:  # idempotent on reopen
+        assert reopened.schema_version == len(MIGRATIONS)
 
 
-def test_concurrent_event_writes_are_serialised(tmp_path: Path) -> None:
-    repository = SqliteRunRepository(tmp_path / "db.sqlite")
+def test_concurrent_event_writes_are_serialised(repository: SqliteRunRepository) -> None:
     repository.create_run(_new_run("run_c"))
 
     def write(offset: int) -> None:

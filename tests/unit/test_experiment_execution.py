@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import threading
 import time
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -200,6 +201,9 @@ class Harness:
         self.artifacts = LocalArtifactStore(self.tmp / "artifacts")
         (self.tmp / "work").mkdir()
 
+    def close(self) -> None:
+        self.database.close()
+
     def backend(self) -> SandboxBackend:
         backend = FakeBackend(
             root=self.tmp / "sandboxes" / f"b{len(self.backends)}",
@@ -290,10 +294,18 @@ class RecordingObserver:
 
 
 @pytest.fixture
-def harness(tmp_path: Path) -> Callable[..., Harness]:
+def harness(tmp_path: Path) -> Iterator[Callable[..., Harness]]:
     GAUGE.active = GAUGE.peak = 0
     CANCEL_AFTER.clear()
-    return lambda **kwargs: Harness(tmp_path, **kwargs)
+    created: list[Harness] = []
+
+    def make(**kwargs: Any) -> Harness:
+        created.append(Harness(tmp_path, **kwargs))
+        return created[-1]
+
+    yield make
+    for harness in created:
+        harness.close()
 
 
 def test_experiment_runs_every_combination_with_bounded_concurrency(

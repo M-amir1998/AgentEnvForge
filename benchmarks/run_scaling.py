@@ -38,6 +38,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from contextlib import closing
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -73,11 +74,11 @@ def leftovers(run_ids: list[str]) -> int | None:
     except ImportError:
         return None
     try:
-        client = docker.from_env()
-        return sum(
-            len(client.containers.list(all=True, filters={"label": f"{RUN_ID_LABEL}={run_id}"}))
-            for run_id in run_ids
-        )
+        with closing(docker.from_env()) as client:
+            return sum(
+                len(client.containers.list(all=True, filters={"label": f"{RUN_ID_LABEL}={run_id}"}))
+                for run_id in run_ids
+            )
     except DockerException:
         return None
 

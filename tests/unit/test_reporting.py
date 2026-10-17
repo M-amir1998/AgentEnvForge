@@ -6,6 +6,7 @@ import csv
 import json
 import re
 import sys
+from collections.abc import Iterator
 from dataclasses import fields
 from pathlib import Path
 
@@ -28,7 +29,7 @@ from tests.unit.test_experiment_execution import CANCEL_AFTER, GAUGE, Harness
 
 
 @pytest.fixture
-def executed(tmp_path: Path) -> tuple[Harness, StoredExperiment, Path]:
+def executed(tmp_path: Path) -> Iterator[tuple[Harness, StoredExperiment, Path]]:
     GAUGE.active = GAUGE.peak = 0
     CANCEL_AFTER.clear()
     harness = Harness(tmp_path)
@@ -36,7 +37,8 @@ def executed(tmp_path: Path) -> tuple[Harness, StoredExperiment, Path]:
     outcome, _ = harness.execute(definition, workers=2)
     stored = harness.experiments.get_experiment(outcome.experiment_id)
     assert stored is not None
-    return harness, stored, definition
+    yield harness, stored, definition
+    harness.close()
 
 
 def publish(
