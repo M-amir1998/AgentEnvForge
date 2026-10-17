@@ -123,12 +123,16 @@ def _close_stream(stream: object) -> None:
     that socket open otherwise ("the caller is responsible for closing the response").
     Best effort: the daemon may already have closed its side, and not every transport
     supports shutting a socket down (Windows named pipes)."""
-    close = getattr(stream, "close", None)
-    if callable(close):
-        try:
-            close()
-        except Exception:
-            logger.debug("could not close an exec output stream", exc_info=True)
+    # CancellableStream.close() shuts the socket down and marks it closed, but the HTTP
+    # response still holds a file object on it, which keeps the descriptor open until the
+    # response is closed too.
+    response = getattr(stream, "_response", None)
+    for closer in (getattr(stream, "close", None), getattr(response, "close", None)):
+        if callable(closer):
+            try:
+                closer()
+            except Exception:  # closing must never mask the command's outcome
+                logger.debug("could not close an exec output stream", exc_info=True)
 
 
 class _BoundedBuffer:
