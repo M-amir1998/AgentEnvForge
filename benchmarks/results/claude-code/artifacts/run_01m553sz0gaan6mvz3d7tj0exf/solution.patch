@@ -1,0 +1,30 @@
+diff --git a/ledger/store.py b/ledger/store.py
+--- a/ledger/store.py
++++ b/ledger/store.py
+@@ -2,6 +2,7 @@
+ 
+ from __future__ import annotations
+ 
++import copy
+ from collections.abc import Iterator
+ from contextlib import contextmanager
+ from typing import Any
+@@ -43,11 +44,15 @@
+         propagates. Transactions may be nested; rolling back an inner transaction only
+         undoes the changes made inside that inner block.
+         """
+-        self._snapshots.append(dict(self._data))
++        # Deep copy so that mutable values (e.g. the history list) are also
++        # restored on rollback, not just the top-level mapping.
++        snapshot = copy.deepcopy(self._data)
++        self._snapshots.append(snapshot)
+         try:
+             yield self
+-        except Exception:
+-            self._data = self._snapshots[0]
++        except BaseException:
++            self._data = snapshot
++            raise
+         finally:
+             self._snapshots.pop()
+ 

@@ -1,0 +1,143 @@
+{
+  "run_id": "run_01m553x1fvkzzsskkpgn8rxr33",
+  "task_id": "ledger-transaction-rollback",
+  "status": "completed",
+  "passed": true,
+  "score": 1.0,
+  "failure": null,
+  "agent": {
+    "adapter": "claude-code:claude-opus-5-5",
+    "outcome": "completed",
+    "exit_code": null,
+    "summary": "I fixed `Store.transaction()` in `ledger/store.py`, which had three bugs. Both tests now pass. A quick manual check also showed that a failed transfer raises and leaves balances and history unchanged, and that rolling back an inner transaction keeps the outer one's changes.\n\n1. **Failed transfers were silently ignored.** The `except` block undid the changes but never re-raised, so the error never reached the caller. It now re-raises after rolling back.\n2. **Nested rollback undid too much.** It r",
+    "duration_ms": 18875,
+    "command_count": 2,
+    "metadata": {
+      "model": "claude-opus-5-5",
+      "models_used": "claude-opus-5-5",
+      "stop_reason": "success",
+      "turns": 5,
+      "tool_calls": 4,
+      "tool_errors": 0,
+      "tools_used": "{\"replace_in_file\": 2, \"run\": 2}",
+      "prompt_tokens": 8990,
+      "completion_tokens": 1440,
+      "cache_read_tokens": 6355,
+      "cache_write_tokens": 2629,
+      "cost_usd_list_price": 0.051127,
+      "api_seconds": 15.9,
+      "effort": "default",
+      "seed": null
+    }
+  },
+  "grade": {
+    "grader": "composite",
+    "grader_type": "composite",
+    "passed": true,
+    "score": 1.0,
+    "tests_passed": 9,
+    "tests_failed": 0,
+    "tests_errored": 0,
+    "tests_skipped": 0,
+    "duration_ms": 1093,
+    "summary": "2/2 graders passed",
+    "details": {},
+    "components": [
+      {
+        "grader": "hidden-tests",
+        "grader_type": "pytest",
+        "passed": true,
+        "score": 1.0,
+        "tests_passed": 7,
+        "tests_failed": 0,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 531,
+        "summary": "7/7 tests passed",
+        "details": {
+          "exit_code": 0
+        },
+        "components": []
+      },
+      {
+        "grader": "visible-tests",
+        "grader_type": "pytest",
+        "passed": true,
+        "score": 1.0,
+        "tests_passed": 2,
+        "tests_failed": 0,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 562,
+        "summary": "2/2 tests passed",
+        "details": {
+          "exit_code": 0
+        },
+        "components": []
+      }
+    ]
+  },
+  "stage_timings": [
+    {
+      "status": "created",
+      "started_at": "2026-10-17T14:22:53.950998Z",
+      "duration_ms": 2
+    },
+    {
+      "status": "validating",
+      "started_at": "2026-10-17T14:22:53.952588Z",
+      "duration_ms": 27
+    },
+    {
+      "status": "preparing_source",
+      "started_at": "2026-10-17T14:22:53.979639Z",
+      "duration_ms": 7
+    },
+    {
+      "status": "building_sandbox",
+      "started_at": "2026-10-17T14:22:53.987110Z",
+      "duration_ms": 35
+    },
+    {
+      "status": "starting_sandbox",
+      "started_at": "2026-10-17T14:22:54.022349Z",
+      "duration_ms": 259
+    },
+    {
+      "status": "running_agent",
+      "started_at": "2026-10-17T14:22:54.281271Z",
+      "duration_ms": 18885
+    },
+    {
+      "status": "capturing_solution",
+      "started_at": "2026-10-17T14:23:13.166681Z",
+      "duration_ms": 103
+    },
+    {
+      "status": "running_grader",
+      "started_at": "2026-10-17T14:23:13.269999Z",
+      "duration_ms": 1327
+    },
+    {
+      "status": "collecting_artifacts",
+      "started_at": "2026-10-17T14:23:14.597198Z",
+      "duration_ms": 3
+    },
+    {
+      "status": "cleaning_up",
+      "started_at": "2026-10-17T14:23:14.599799Z",
+      "duration_ms": 103
+    }
+  ],
+  "cleanup": {
+    "succeeded": true,
+    "sandboxes_removed": [
+      "agentenv-run_01m553x1fvkzzsskkpgn8rxr33-agent",
+      "agentenv-run_01m553x1fvkzzsskkpgn8rxr33-grader"
+    ],
+    "errors": []
+  },
+  "created_at": "2026-10-17T14:22:53.950998Z",
+  "finished_at": "2026-10-17T14:23:14.702412Z",
+  "duration_ms": 20751
+}

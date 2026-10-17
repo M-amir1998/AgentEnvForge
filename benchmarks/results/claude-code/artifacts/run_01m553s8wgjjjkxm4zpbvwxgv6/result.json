@@ -1,0 +1,143 @@
+{
+  "run_id": "run_01m553s8wgjjjkxm4zpbvwxgv6",
+  "task_id": "moving-average-off-by-one",
+  "status": "completed",
+  "passed": true,
+  "score": 1.0,
+  "failure": null,
+  "agent": {
+    "adapter": "claude-code:claude-haiku-5-5",
+    "outcome": "completed",
+    "exit_code": null,
+    "summary": "The bug was an off-by-one in the loop bound in `stats/window.py`. `range(len(values) - window)` produced one window too few. I changed it to `range(len(values) - window + 1)`, which gives the correct number of windows. The signature is unchanged.\n\n`python -m pytest -q` now passes (1 test, `test_documented_example`), and `moving_average([1, 2, 3, 4], 2)` returns `[1.5, 2.5, 3.5]`.",
+    "duration_ms": 7422,
+    "command_count": 2,
+    "metadata": {
+      "model": "claude-haiku-5-5",
+      "models_used": "claude-haiku-5-5",
+      "stop_reason": "success",
+      "turns": 5,
+      "tool_calls": 4,
+      "tool_errors": 0,
+      "tools_used": "{\"read_file\": 1, \"replace_in_file\": 1, \"run\": 2}",
+      "prompt_tokens": 7122,
+      "completion_tokens": 584,
+      "cache_read_tokens": 5594,
+      "cache_write_tokens": 1522,
+      "cost_usd_list_price": 0.0006529400000000001,
+      "api_seconds": 4.3,
+      "effort": "default",
+      "seed": null
+    }
+  },
+  "grade": {
+    "grader": "composite",
+    "grader_type": "composite",
+    "passed": true,
+    "score": 1.0,
+    "tests_passed": 8,
+    "tests_failed": 0,
+    "tests_errored": 0,
+    "tests_skipped": 0,
+    "duration_ms": 1141,
+    "summary": "2/2 graders passed",
+    "details": {},
+    "components": [
+      {
+        "grader": "hidden-tests",
+        "grader_type": "pytest",
+        "passed": true,
+        "score": 1.0,
+        "tests_passed": 7,
+        "tests_failed": 0,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 641,
+        "summary": "7/7 tests passed",
+        "details": {
+          "exit_code": 0
+        },
+        "components": []
+      },
+      {
+        "grader": "visible-tests",
+        "grader_type": "pytest",
+        "passed": true,
+        "score": 1.0,
+        "tests_passed": 1,
+        "tests_failed": 0,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 500,
+        "summary": "1/1 tests passed",
+        "details": {
+          "exit_code": 0
+        },
+        "components": []
+      }
+    ]
+  },
+  "stage_timings": [
+    {
+      "status": "created",
+      "started_at": "2026-10-17T14:20:50.452613Z",
+      "duration_ms": 13
+    },
+    {
+      "status": "validating",
+      "started_at": "2026-10-17T14:20:50.465649Z",
+      "duration_ms": 1076
+    },
+    {
+      "status": "preparing_source",
+      "started_at": "2026-10-17T14:20:51.541181Z",
+      "duration_ms": 16
+    },
+    {
+      "status": "building_sandbox",
+      "started_at": "2026-10-17T14:20:51.556703Z",
+      "duration_ms": 35
+    },
+    {
+      "status": "starting_sandbox",
+      "started_at": "2026-10-17T14:20:51.591873Z",
+      "duration_ms": 300
+    },
+    {
+      "status": "running_agent",
+      "started_at": "2026-10-17T14:20:51.891476Z",
+      "duration_ms": 7434
+    },
+    {
+      "status": "capturing_solution",
+      "started_at": "2026-10-17T14:20:59.325563Z",
+      "duration_ms": 158
+    },
+    {
+      "status": "running_grader",
+      "started_at": "2026-10-17T14:20:59.483479Z",
+      "duration_ms": 1444
+    },
+    {
+      "status": "collecting_artifacts",
+      "started_at": "2026-10-17T14:21:00.927136Z",
+      "duration_ms": 3
+    },
+    {
+      "status": "cleaning_up",
+      "started_at": "2026-10-17T14:21:00.929956Z",
+      "duration_ms": 105
+    }
+  ],
+  "cleanup": {
+    "succeeded": true,
+    "sandboxes_removed": [
+      "agentenv-run_01m553s8wgjjjkxm4zpbvwxgv6-agent",
+      "agentenv-run_01m553s8wgjjjkxm4zpbvwxgv6-grader"
+    ],
+    "errors": []
+  },
+  "created_at": "2026-10-17T14:20:50.452613Z",
+  "finished_at": "2026-10-17T14:21:01.034705Z",
+  "duration_ms": 10582
+}

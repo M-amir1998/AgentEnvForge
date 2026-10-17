@@ -1,0 +1,143 @@
+{
+  "run_id": "run_01m553svgjf8v311gjktben3x9",
+  "task_id": "lru-cache-recency",
+  "status": "completed",
+  "passed": true,
+  "score": 1.0,
+  "failure": null,
+  "agent": {
+    "adapter": "claude-code:claude-opus-5-5",
+    "outcome": "completed",
+    "exit_code": null,
+    "summary": "I fixed `cache/lru.py`, and both tests now pass.\n\n**Root cause:** The cache never recorded when an entry was used. `get` returned the value but left the key where it was, and `put` on an existing key left it in its original position too. Entries stayed in insertion order, so the cache evicted whatever was put in first, even an entry you had just read. That's why the hit rate was low.\n\n**Fix:**\n- **`get`:** now moves the key to the most-recently-used end on a hit.\n- **`put`:** updating an existin",
+    "duration_ms": 13515,
+    "command_count": 2,
+    "metadata": {
+      "model": "claude-opus-5-5",
+      "models_used": "claude-opus-5-5",
+      "stop_reason": "success",
+      "turns": 5,
+      "tool_calls": 4,
+      "tool_errors": 0,
+      "tools_used": "{\"read_file\": 1, \"replace_in_file\": 1, \"run\": 2}",
+      "prompt_tokens": 8131,
+      "completion_tokens": 915,
+      "cache_read_tokens": 5647,
+      "cache_write_tokens": 2478,
+      "cost_usd_list_price": 0.039277400000000004,
+      "api_seconds": 10.2,
+      "effort": "default",
+      "seed": null
+    }
+  },
+  "grade": {
+    "grader": "composite",
+    "grader_type": "composite",
+    "passed": true,
+    "score": 1.0,
+    "tests_passed": 11,
+    "tests_failed": 0,
+    "tests_errored": 0,
+    "tests_skipped": 0,
+    "duration_ms": 1313,
+    "summary": "2/2 graders passed",
+    "details": {},
+    "components": [
+      {
+        "grader": "hidden-tests",
+        "grader_type": "pytest",
+        "passed": true,
+        "score": 1.0,
+        "tests_passed": 9,
+        "tests_failed": 0,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 656,
+        "summary": "9/9 tests passed",
+        "details": {
+          "exit_code": 0
+        },
+        "components": []
+      },
+      {
+        "grader": "visible-tests",
+        "grader_type": "pytest",
+        "passed": true,
+        "score": 1.0,
+        "tests_passed": 2,
+        "tests_failed": 0,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 657,
+        "summary": "2/2 tests passed",
+        "details": {
+          "exit_code": 0
+        },
+        "components": []
+      }
+    ]
+  },
+  "stage_timings": [
+    {
+      "status": "created",
+      "started_at": "2026-10-17T14:21:09.524385Z",
+      "duration_ms": 1
+    },
+    {
+      "status": "validating",
+      "started_at": "2026-10-17T14:21:09.525446Z",
+      "duration_ms": 25
+    },
+    {
+      "status": "preparing_source",
+      "started_at": "2026-10-17T14:21:09.550747Z",
+      "duration_ms": 9
+    },
+    {
+      "status": "building_sandbox",
+      "started_at": "2026-10-17T14:21:09.559475Z",
+      "duration_ms": 22
+    },
+    {
+      "status": "starting_sandbox",
+      "started_at": "2026-10-17T14:21:09.581715Z",
+      "duration_ms": 248
+    },
+    {
+      "status": "running_agent",
+      "started_at": "2026-10-17T14:21:09.829659Z",
+      "duration_ms": 13525
+    },
+    {
+      "status": "capturing_solution",
+      "started_at": "2026-10-17T14:21:23.354277Z",
+      "duration_ms": 93
+    },
+    {
+      "status": "running_grader",
+      "started_at": "2026-10-17T14:21:23.447322Z",
+      "duration_ms": 1569
+    },
+    {
+      "status": "collecting_artifacts",
+      "started_at": "2026-10-17T14:21:25.016015Z",
+      "duration_ms": 3
+    },
+    {
+      "status": "cleaning_up",
+      "started_at": "2026-10-17T14:21:25.018731Z",
+      "duration_ms": 90
+    }
+  ],
+  "cleanup": {
+    "succeeded": true,
+    "sandboxes_removed": [
+      "agentenv-run_01m553svgjf8v311gjktben3x9-agent",
+      "agentenv-run_01m553svgjf8v311gjktben3x9-grader"
+    ],
+    "errors": []
+  },
+  "created_at": "2026-10-17T14:21:09.524385Z",
+  "finished_at": "2026-10-17T14:21:25.108568Z",
+  "duration_ms": 15584
+}

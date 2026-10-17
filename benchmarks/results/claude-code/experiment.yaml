@@ -1,0 +1,57 @@
+# Hosted-model benchmark: Claude models driven by Claude Code, acting only through the
+# sandbox's MCP tools (examples/agents/claude-code).
+#
+#   agentenv experiment validate benchmarks/claude-code/experiment.yaml --preflight
+#   agentenv experiment run benchmarks/claude-code/experiment.yaml --overwrite
+#
+# Requires the Claude Code CLI, logged in. Every model run uses model capacity (API tokens
+# or part of a subscription's allowance); usage_guard stops runs at 98% of the allowance.
+#
+# Subjects: three Claude models with the same scaffold, tools and prompt. The oracle
+# (reference) and noop (baseline) are NOT AI agents: they validate the tasks.
+#
+# Tasks, by the number of interacting bugs to find and fix (as in local-ollama):
+#   easy    moving-average-off-by-one   one off-by-one error
+#   medium  lru-cache-recency           two related recency/eviction bugs
+#   hard    ledger-transaction-rollback three bugs (shallow snapshot, wrong snapshot
+#                                       restored, exception swallowed)
+#
+# Claude Code takes no sampling seed: the repetitions are independent samples.
+# workers: 3. The models run remotely and each agent loop is a separate, mostly idle
+# process, so concurrency costs little; timings still share this machine and Docker.
+schema_version: "1"
+id: claude-code
+name: Claude models as coding agents (Claude Code with sandbox tools)
+description: >
+  Claude Haiku 5.5, Sonnet 5.5 and Opus 5.5 driven by Claude Code on an easy, a medium and
+  a hard bug-fix task, three repetitions each, validated by an oracle and a noop baseline.
+tags: [benchmark, llm, claude, hosted]
+tasks:
+  - ../../examples/off-by-one/task.yaml
+  - ../../examples/lru-cache/task.yaml
+  - ../../examples/basic/task.yaml
+agents:
+  - id: claude-haiku-5-5
+    spec: ../../examples/agents/claude-code/claude-haiku-5-5.yaml
+    options: {usage_guard: 0.98}
+    agent_timeout_seconds: 600
+  - id: claude-sonnet-5-5
+    spec: ../../examples/agents/claude-code/claude-sonnet-5-5.yaml
+    options: {usage_guard: 0.98}
+    agent_timeout_seconds: 600
+  - id: claude-opus-5-5
+    spec: ../../examples/agents/claude-code/claude-opus-5-5.yaml
+    options: {usage_guard: 0.98}
+    agent_timeout_seconds: 600
+  - id: oracle
+    role: reference
+    spec: ../../examples/agents/oracle/oracle.yaml
+  - id: noop
+    role: baseline
+    agent: {type: noop}
+repetitions: 3
+execution:
+  workers: 3
+  base_seed: 0
+output:
+  directory: ../results/claude-code

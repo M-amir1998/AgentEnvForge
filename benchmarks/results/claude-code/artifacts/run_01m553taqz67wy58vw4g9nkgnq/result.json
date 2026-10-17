@@ -1,0 +1,127 @@
+{
+  "run_id": "run_01m553taqz67wy58vw4g9nkgnq",
+  "task_id": "ledger-transaction-rollback",
+  "status": "completed",
+  "passed": false,
+  "score": 0.321429,
+  "failure": null,
+  "agent": {
+    "adapter": "noop",
+    "outcome": "completed",
+    "exit_code": null,
+    "summary": "no-op",
+    "duration_ms": 0,
+    "command_count": 0,
+    "metadata": {}
+  },
+  "grade": {
+    "grader": "composite",
+    "grader_type": "composite",
+    "passed": false,
+    "score": 0.321429,
+    "tests_passed": 2,
+    "tests_failed": 7,
+    "tests_errored": 0,
+    "tests_skipped": 0,
+    "duration_ms": 1297,
+    "summary": "0/2 graders passed",
+    "details": {},
+    "components": [
+      {
+        "grader": "hidden-tests",
+        "grader_type": "pytest",
+        "passed": false,
+        "score": 0.142857,
+        "tests_passed": 1,
+        "tests_failed": 6,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 547,
+        "summary": "1/7 tests passed",
+        "details": {
+          "exit_code": 1
+        },
+        "components": []
+      },
+      {
+        "grader": "visible-tests",
+        "grader_type": "pytest",
+        "passed": false,
+        "score": 0.5,
+        "tests_passed": 1,
+        "tests_failed": 1,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 750,
+        "summary": "1/2 tests passed",
+        "details": {
+          "exit_code": 1
+        },
+        "components": []
+      }
+    ]
+  },
+  "stage_timings": [
+    {
+      "status": "created",
+      "started_at": "2026-10-17T14:21:25.122432Z",
+      "duration_ms": 2
+    },
+    {
+      "status": "validating",
+      "started_at": "2026-10-17T14:21:25.124829Z",
+      "duration_ms": 22
+    },
+    {
+      "status": "preparing_source",
+      "started_at": "2026-10-17T14:21:25.146936Z",
+      "duration_ms": 6
+    },
+    {
+      "status": "building_sandbox",
+      "started_at": "2026-10-17T14:21:25.152812Z",
+      "duration_ms": 20
+    },
+    {
+      "status": "starting_sandbox",
+      "started_at": "2026-10-17T14:21:25.172609Z",
+      "duration_ms": 200
+    },
+    {
+      "status": "running_agent",
+      "started_at": "2026-10-17T14:21:25.372953Z",
+      "duration_ms": 1
+    },
+    {
+      "status": "capturing_solution",
+      "started_at": "2026-10-17T14:21:25.374001Z",
+      "duration_ms": 79
+    },
+    {
+      "status": "running_grader",
+      "started_at": "2026-10-17T14:21:25.453485Z",
+      "duration_ms": 1566
+    },
+    {
+      "status": "collecting_artifacts",
+      "started_at": "2026-10-17T14:21:27.019087Z",
+      "duration_ms": 7
+    },
+    {
+      "status": "cleaning_up",
+      "started_at": "2026-10-17T14:21:27.025736Z",
+      "duration_ms": 119
+    }
+  ],
+  "cleanup": {
+    "succeeded": true,
+    "sandboxes_removed": [
+      "agentenv-run_01m553taqz67wy58vw4g9nkgnq-agent",
+      "agentenv-run_01m553taqz67wy58vw4g9nkgnq-grader"
+    ],
+    "errors": []
+  },
+  "created_at": "2026-10-17T14:21:25.122432Z",
+  "finished_at": "2026-10-17T14:21:27.144922Z",
+  "duration_ms": 2022
+}

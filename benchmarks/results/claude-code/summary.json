@@ -1,0 +1,827 @@
+{
+  "summary_version": 1,
+  "experiment_id": "exp_01m553s7zcc87j6ddt2ywer4cz",
+  "spec_id": "claude-code",
+  "name": "Claude models as coding agents (Claude Code with sandbox tools)",
+  "status": "completed",
+  "partial": false,
+  "generated_at": "2026-10-17T14:30:04.274928Z",
+  "workers": 3,
+  "repetitions": 3,
+  "counts": {
+    "passed": 35,
+    "failed": 10,
+    "agent_timeout": 0,
+    "solution_timeout": 0,
+    "agent_error": 0,
+    "post_agent_error": 0,
+    "infrastructure_error": 0,
+    "agent_unavailable": 0,
+    "cancelled": 0,
+    "not_started": 0,
+    "incomplete": 0
+  },
+  "running_seconds": 144.270635,
+  "runs_per_hour": 1122.89,
+  "agents": [
+    {
+      "agent_id": "claude-haiku-5-5",
+      "role": "subject",
+      "adapter": "claude-code:claude-haiku-5-5",
+      "model": "claude-haiku-5-5",
+      "counts": {
+        "passed": 8,
+        "failed": 1,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 8,
+        "trials": 9,
+        "estimate": 0.8888888888888888,
+        "ci_low": 0.5650002944233441,
+        "ci_high": 0.9801091123614551,
+        "confidence": 0.95,
+        "note": "pooled over this experiment's tasks (conditional on this task mix)"
+      },
+      "task_mean_success": 0.888889,
+      "tasks_without_scored_runs": [],
+      "deterministic": false,
+      "pass_at_k": {
+        "k": 3,
+        "value": 1.0,
+        "note": null
+      },
+      "run_seconds": {
+        "count": 9,
+        "mean": 12.359,
+        "median": 11.751,
+        "minimum": 9.407,
+        "maximum": 16.218,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_seconds": {
+        "count": 9,
+        "mean": 10.016,
+        "median": 9.361,
+        "minimum": 7.189,
+        "maximum": 14.043,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_budget_seconds": [
+        600
+      ],
+      "tokens": {
+        "prompt_tokens": 73599,
+        "completion_tokens": 10132,
+        "generation_tokens_per_second": null
+      }
+    },
+    {
+      "agent_id": "claude-sonnet-5-5",
+      "role": "subject",
+      "adapter": "claude-code:claude-sonnet-5-5",
+      "model": "claude-sonnet-5-5",
+      "counts": {
+        "passed": 9,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 9,
+        "trials": 9,
+        "estimate": 1.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions in every repeated task (same outcome and patch): counted as one observation per task, so no interval"
+      },
+      "task_mean_success": 1.0,
+      "tasks_without_scored_runs": [],
+      "deterministic": true,
+      "pass_at_k": {
+        "k": 3,
+        "value": null,
+        "note": "identical repetitions: pass@k equals pass@1"
+      },
+      "run_seconds": {
+        "count": 9,
+        "mean": 11.583,
+        "median": 11.558,
+        "minimum": 9.03,
+        "maximum": 14.889,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_seconds": {
+        "count": 9,
+        "mean": 9.357,
+        "median": 9.556,
+        "minimum": 6.897,
+        "maximum": 12.749,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_budget_seconds": [
+        600
+      ],
+      "tokens": {
+        "prompt_tokens": 63739,
+        "completion_tokens": 5775,
+        "generation_tokens_per_second": null
+      }
+    },
+    {
+      "agent_id": "claude-opus-5-5",
+      "role": "subject",
+      "adapter": "claude-code:claude-opus-5-5",
+      "model": "claude-opus-5-5",
+      "counts": {
+        "passed": 9,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 9,
+        "trials": 9,
+        "estimate": 1.0,
+        "ci_low": 0.7008549515804562,
+        "ci_high": 1.0,
+        "confidence": 0.95,
+        "note": "pooled over this experiment's tasks (conditional on this task mix)"
+      },
+      "task_mean_success": 1.0,
+      "tasks_without_scored_runs": [],
+      "deterministic": false,
+      "pass_at_k": {
+        "k": 3,
+        "value": 1.0,
+        "note": null
+      },
+      "run_seconds": {
+        "count": 9,
+        "mean": 18.144,
+        "median": 18.714,
+        "minimum": 11.691,
+        "maximum": 23.569,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_seconds": {
+        "count": 9,
+        "mean": 16.011,
+        "median": 16.432,
+        "minimum": 9.668,
+        "maximum": 21.01,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_budget_seconds": [
+        600
+      ],
+      "tokens": {
+        "prompt_tokens": 69365,
+        "completion_tokens": 8173,
+        "generation_tokens_per_second": null
+      }
+    },
+    {
+      "agent_id": "oracle",
+      "role": "reference",
+      "adapter": "command:oracle",
+      "model": null,
+      "counts": {
+        "passed": 9,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 9,
+        "trials": 9,
+        "estimate": 1.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions in every repeated task (same outcome and patch): counted as one observation per task, so no interval"
+      },
+      "task_mean_success": 1.0,
+      "tasks_without_scored_runs": [],
+      "deterministic": true,
+      "pass_at_k": {
+        "k": 3,
+        "value": null,
+        "note": "identical repetitions: pass@k equals pass@1"
+      },
+      "run_seconds": {
+        "count": 9,
+        "mean": 2.303,
+        "median": 2.31,
+        "minimum": 2.105,
+        "maximum": 2.537,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_seconds": {
+        "count": 9,
+        "mean": 0.108,
+        "median": 0.092,
+        "minimum": 0.075,
+        "maximum": 0.206,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_budget_seconds": [],
+      "tokens": null
+    },
+    {
+      "agent_id": "noop",
+      "role": "baseline",
+      "adapter": "noop",
+      "model": null,
+      "counts": {
+        "passed": 0,
+        "failed": 9,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 9,
+        "estimate": 0.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions in every repeated task (same outcome and patch): counted as one observation per task, so no interval"
+      },
+      "task_mean_success": 0.0,
+      "tasks_without_scored_runs": [],
+      "deterministic": true,
+      "pass_at_k": {
+        "k": 3,
+        "value": null,
+        "note": "identical repetitions: pass@k equals pass@1"
+      },
+      "run_seconds": {
+        "count": 9,
+        "mean": 2.182,
+        "median": 2.196,
+        "minimum": 1.928,
+        "maximum": 2.552,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_seconds": {
+        "count": 9,
+        "mean": 0.002,
+        "median": 0.002,
+        "minimum": 0.001,
+        "maximum": 0.003,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_budget_seconds": [],
+      "tokens": null
+    }
+  ],
+  "tasks": [
+    {
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 9,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 9,
+        "trials": 9,
+        "estimate": 1.0,
+        "ci_low": 0.7008549515804562,
+        "ci_high": 1.0,
+        "confidence": 0.95,
+        "note": "pooled over subject agents"
+      },
+      "reference_passed_all": true,
+      "baseline_failed_all": true
+    },
+    {
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 9,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 9,
+        "trials": 9,
+        "estimate": 1.0,
+        "ci_low": 0.7008549515804562,
+        "ci_high": 1.0,
+        "confidence": 0.95,
+        "note": "pooled over subject agents"
+      },
+      "reference_passed_all": true,
+      "baseline_failed_all": true
+    },
+    {
+      "task_id": "ledger-transaction-rollback",
+      "counts": {
+        "passed": 8,
+        "failed": 1,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 8,
+        "trials": 9,
+        "estimate": 0.8888888888888888,
+        "ci_low": 0.5650002944233441,
+        "ci_high": 0.9801091123614551,
+        "confidence": 0.95,
+        "note": "pooled over subject agents"
+      },
+      "reference_passed_all": true,
+      "baseline_failed_all": true
+    }
+  ],
+  "cells": [
+    {
+      "agent_id": "claude-haiku-5-5",
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 3,
+        "trials": 3,
+        "estimate": 1.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "claude-haiku-5-5",
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 3,
+        "trials": 3,
+        "estimate": 1.0,
+        "ci_low": 0.4385029682449546,
+        "ci_high": 1.0,
+        "confidence": 0.95,
+        "note": null
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "claude-haiku-5-5",
+      "task_id": "ledger-transaction-rollback",
+      "counts": {
+        "passed": 2,
+        "failed": 1,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 2,
+        "trials": 3,
+        "estimate": 0.6666666666666666,
+        "ci_low": 0.20765960080204782,
+        "ci_high": 0.9385080552796038,
+        "confidence": 0.95,
+        "note": null
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "claude-sonnet-5-5",
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 3,
+        "trials": 3,
+        "estimate": 1.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "claude-sonnet-5-5",
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 3,
+        "trials": 3,
+        "estimate": 1.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "claude-sonnet-5-5",
+      "task_id": "ledger-transaction-rollback",
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 3,
+        "trials": 3,
+        "estimate": 1.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "claude-opus-5-5",
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 3,
+        "trials": 3,
+        "estimate": 1.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "claude-opus-5-5",
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 3,
+        "trials": 3,
+        "estimate": 1.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "claude-opus-5-5",
+      "task_id": "ledger-transaction-rollback",
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 3,
+        "trials": 3,
+        "estimate": 1.0,
+        "ci_low": 0.4385029682449546,
+        "ci_high": 1.0,
+        "confidence": 0.95,
+        "note": null
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "oracle",
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 3,
+        "trials": 3,
+        "estimate": 1.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "oracle",
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 3,
+        "trials": 3,
+        "estimate": 1.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "oracle",
+      "task_id": "ledger-transaction-rollback",
+      "counts": {
+        "passed": 3,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 3,
+        "trials": 3,
+        "estimate": 1.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "noop",
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 0,
+        "failed": 3,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 3,
+        "estimate": 0.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "noop",
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 0,
+        "failed": 3,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 3,
+        "estimate": 0.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    },
+    {
+      "agent_id": "noop",
+      "task_id": "ledger-transaction-rollback",
+      "counts": {
+        "passed": 0,
+        "failed": 3,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 0,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 3,
+        "estimate": 0.0,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "identical repetitions (effective n = 1): no interval"
+      },
+      "identical_repetitions": true
+    }
+  ],
+  "failures": [
+    {
+      "outcome": "failed",
+      "reason": "graded_failure",
+      "stage": null,
+      "count": 10
+    }
+  ],
+  "warnings": [],
+  "results_valid": true,
+  "invariant_violations": []
+}

@@ -1,0 +1,16 @@
+diff --git a/ledger/store.py b/ledger/store.py
+--- a/ledger/store.py
++++ b/ledger/store.py
+@@ -46,8 +46,10 @@
+         self._snapshots.append(dict(self._data))
+         try:
+             yield self
+-        except Exception:
+-            self._data = self._snapshots[0]
++        except BaseException:
++            # Restore only this block's starting state, then let the error propagate.
++            self._data = self._snapshots[-1]
++            raise
+         finally:
+             self._snapshots.pop()
+ 

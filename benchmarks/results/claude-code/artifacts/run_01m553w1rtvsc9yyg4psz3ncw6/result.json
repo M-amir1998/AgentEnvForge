@@ -1,0 +1,143 @@
+{
+  "run_id": "run_01m553w1rtvsc9yyg4psz3ncw6",
+  "task_id": "moving-average-off-by-one",
+  "status": "completed",
+  "passed": true,
+  "score": 1.0,
+  "failure": null,
+  "agent": {
+    "adapter": "claude-code:claude-opus-5-5",
+    "outcome": "completed",
+    "exit_code": null,
+    "summary": "I fixed an off-by-one error in `stats/window.py`. The loop used `range(len(values) - window)`, which stops one starting position too early, so the last window was never averaged. A list of length `n` has `n - window + 1` windows, so I changed the loop to `range(len(values) - window + 1)`.\n\n`moving_average([1, 2, 3, 4], 2)` now returns `[1.5, 2.5, 3.5]`. The signature is the same, and the `ValueError` for `window < 1` still works. If `window` is longer than the list, the range is empty and the fu",
+    "duration_ms": 16438,
+    "command_count": 1,
+    "metadata": {
+      "model": "claude-opus-5-5",
+      "models_used": "claude-opus-5-5",
+      "stop_reason": "success",
+      "turns": 4,
+      "tool_calls": 3,
+      "tool_errors": 0,
+      "tools_used": "{\"read_file\": 1, \"replace_in_file\": 1, \"run\": 1}",
+      "prompt_tokens": 6244,
+      "completion_tokens": 458,
+      "cache_read_tokens": 5214,
+      "cache_write_tokens": 1024,
+      "cost_usd_list_price": 0.0184188,
+      "api_seconds": 13.4,
+      "effort": "default",
+      "seed": null
+    }
+  },
+  "grade": {
+    "grader": "composite",
+    "grader_type": "composite",
+    "passed": true,
+    "score": 1.0,
+    "tests_passed": 8,
+    "tests_failed": 0,
+    "tests_errored": 0,
+    "tests_skipped": 0,
+    "duration_ms": 1297,
+    "summary": "2/2 graders passed",
+    "details": {},
+    "components": [
+      {
+        "grader": "hidden-tests",
+        "grader_type": "pytest",
+        "passed": true,
+        "score": 1.0,
+        "tests_passed": 7,
+        "tests_failed": 0,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 672,
+        "summary": "7/7 tests passed",
+        "details": {
+          "exit_code": 0
+        },
+        "components": []
+      },
+      {
+        "grader": "visible-tests",
+        "grader_type": "pytest",
+        "passed": true,
+        "score": 1.0,
+        "tests_passed": 1,
+        "tests_failed": 0,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 625,
+        "summary": "1/1 tests passed",
+        "details": {
+          "exit_code": 0
+        },
+        "components": []
+      }
+    ]
+  },
+  "stage_timings": [
+    {
+      "status": "created",
+      "started_at": "2026-10-17T14:22:21.469520Z",
+      "duration_ms": 3
+    },
+    {
+      "status": "validating",
+      "started_at": "2026-10-17T14:22:21.472045Z",
+      "duration_ms": 35
+    },
+    {
+      "status": "preparing_source",
+      "started_at": "2026-10-17T14:22:21.507232Z",
+      "duration_ms": 12
+    },
+    {
+      "status": "building_sandbox",
+      "started_at": "2026-10-17T14:22:21.519127Z",
+      "duration_ms": 33
+    },
+    {
+      "status": "starting_sandbox",
+      "started_at": "2026-10-17T14:22:21.551776Z",
+      "duration_ms": 272
+    },
+    {
+      "status": "running_agent",
+      "started_at": "2026-10-17T14:22:21.823455Z",
+      "duration_ms": 16432
+    },
+    {
+      "status": "capturing_solution",
+      "started_at": "2026-10-17T14:22:38.255492Z",
+      "duration_ms": 108
+    },
+    {
+      "status": "running_grader",
+      "started_at": "2026-10-17T14:22:38.363737Z",
+      "duration_ms": 1732
+    },
+    {
+      "status": "collecting_artifacts",
+      "started_at": "2026-10-17T14:22:40.095867Z",
+      "duration_ms": 6
+    },
+    {
+      "status": "cleaning_up",
+      "started_at": "2026-10-17T14:22:40.101609Z",
+      "duration_ms": 81
+    }
+  ],
+  "cleanup": {
+    "succeeded": true,
+    "sandboxes_removed": [
+      "agentenv-run_01m553w1rtvsc9yyg4psz3ncw6-agent",
+      "agentenv-run_01m553w1rtvsc9yyg4psz3ncw6-grader"
+    ],
+    "errors": []
+  },
+  "created_at": "2026-10-17T14:22:21.469520Z",
+  "finished_at": "2026-10-17T14:22:40.183084Z",
+  "duration_ms": 18714
+}
