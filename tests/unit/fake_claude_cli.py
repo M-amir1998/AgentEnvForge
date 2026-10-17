@@ -59,11 +59,21 @@ def main() -> int:
     initialized = rpc(url, "initialize", {"protocolVersion": "2025-06-18", "capabilities": {}})
     rpc(url, "notifications/initialized", rid=None)
     tools = [tool["name"] for tool in rpc(url, "tools/list")["tools"]]
+    # Like the real CLI's init message, including host details the adapter must not keep.
     emit(
         {
             "type": "system",
             "subtype": "init",
+            "model": "fake-model",
             "tools": tools,
+            "cwd": str(Path.cwd()),
+            "memory_paths": {"auto": "C--Users-someone-project\\memory"},
+        }
+    )
+    emit(
+        {
+            "type": "system",
+            "subtype": "fake_debug",
             "protocol": initialized["protocolVersion"],
             "prompt": prompt[:40],
             "argv": argv,

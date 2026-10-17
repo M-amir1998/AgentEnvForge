@@ -107,6 +107,18 @@ TOOLS: list[dict[str, Any]] = [
 ALLOWED_TOOLS = tuple(f"mcp__{SERVER_NAME}__{tool['name']}" for tool in TOOLS)
 PROTOCOL_VERSIONS = ("2025-06-18", "2025-03-26", "2024-11-05")
 
+# Fields of the CLI's "init" message kept in the transcript: what the run used. Everything
+# else (working directory, memory and plugin paths, ...) describes the host, not the run.
+_INIT_FIELDS = (
+    "type",
+    "subtype",
+    "model",
+    "tools",
+    "mcp_servers",
+    "permissionMode",
+    "claude_code_version",
+    "apiKeySource",
+)
 _MAX_RUN_OUTPUT_CHARS = 10_000
 _MAX_READ_CHARS = 40_000
 _POLL_SECONDS = 0.25
@@ -402,6 +414,13 @@ class _Stream:
     usage_fraction: float | None = None
 
     def add(self, line: str) -> None:
+        if '"init"' in line:
+            try:
+                message = json.loads(line)
+            except ValueError:
+                message = None
+            if isinstance(message, dict) and message.get("subtype") == "init":
+                line = json.dumps({key: message[key] for key in _INIT_FIELDS if key in message})
         if '"rate_limit_event"' in line:
             try:
                 info = json.loads(line).get("rate_limit_info") or {}

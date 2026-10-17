@@ -81,9 +81,14 @@ def test_agent_fixes_the_bug_through_the_sandbox_tools(
     assert (meta["prompt_tokens"], meta["completion_tokens"]) == (400, 42)
     assert meta["cost_usd_list_price"] == 0.0125 and meta["models_used"] == "fake-model"
     lines = artifacts["agent/transcript.jsonl"].decode().splitlines()
-    init = json.loads(lines[0])
-    assert init["tools"] == ["run", "read_file", "replace_in_file", "write_file"]
-    assert init["protocol"] == "2025-06-18" and init["prompt"] == "Fix add()."
+    init, debug = json.loads(lines[0]), json.loads(lines[1])
+    assert init == {  # host details (cwd, memory paths) are not kept
+        "type": "system",
+        "subtype": "init",
+        "model": "fake-model",
+        "tools": ["run", "read_file", "replace_in_file", "write_file"],
+    }
+    assert debug["protocol"] == "2025-06-18" and debug["prompt"] == "Fix add()."
 
 
 def test_cli_is_isolated_and_limited_to_the_sandbox_tools(
@@ -91,7 +96,7 @@ def test_cli_is_isolated_and_limited_to_the_sandbox_tools(
 ) -> None:
     artifacts: dict[str, bytes] = {}
     agent.run(make_context(sandbox, artifacts))
-    argv = json.loads(artifacts["agent/transcript.jsonl"].decode().splitlines()[0])["argv"]
+    argv = json.loads(artifacts["agent/transcript.jsonl"].decode().splitlines()[1])["argv"]
     assert argv[argv.index("--tools") + 1] == ""  # no built-in tool (no host file access)
     assert argv[argv.index("--allowedTools") + 1] == ",".join(ALLOWED_TOOLS)
     assert argv[argv.index("--setting-sources") + 1] == "project"

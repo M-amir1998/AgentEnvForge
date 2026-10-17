@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 import sys
 from dataclasses import fields
 from pathlib import Path
@@ -207,6 +208,9 @@ def test_sanitizer_rewrites_nested_paths_most_specific_first(tmp_path: Path) -> 
     assert cleaned["b"] == ["see $AGENTENV_HOME/runs", 3, None]
     assert cleaned["c"] == ["~/elsewhere"]
     assert sanitizer.text("benchmarks and words") == "benchmarks and words"
+    # Tools that turn paths into directory names (C:\\Users\\me -> C--Users-me) are covered too.
+    dashed = re.sub(r"[^A-Za-z0-9]", "-", str(Path.home().resolve()))
+    assert sanitizer.text(f"projects/{dashed}-repo/memory") == "projects/~-repo/memory"
 
 
 def test_original_definition_is_copied_only_while_it_is_unchanged(

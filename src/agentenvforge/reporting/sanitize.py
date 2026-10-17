@@ -34,11 +34,17 @@ class PathSanitizer:
         # unrelated words. Longest first, so nested directories map to the most specific one.
         # The JSON-escaped spelling (C:\\Users\\...) is included for text that is serialised
         # JSON after all; structured data should still go through data().
+        # Some tools also derive directory names from paths by replacing every separator with
+        # a dash (Claude Code: C:\\Users\\me\\x -> C--Users-me-x); that spelling is covered too.
         spellings = {
             (spelling, replacement)
             for path, replacement in replacements
             for native in (str(path.resolve()), path.resolve().as_posix())
-            for spelling in (native, native.replace("\\", "\\\\"))
+            for spelling in (
+                native,
+                native.replace("\\", "\\\\"),
+                re.sub(r"[^A-Za-z0-9]", "-", native),
+            )
         }
         self._patterns: list[tuple[re.Pattern[str], str]] = [
             (re.compile(re.escape(spelling), flags), replacement)
