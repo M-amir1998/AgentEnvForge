@@ -2,8 +2,10 @@
 
 from __future__ import annotations
 
+import gc
 import os
 import shutil
+import warnings
 from collections.abc import Callable, Iterator
 from functools import cache
 from pathlib import Path
@@ -18,16 +20,28 @@ REFERENCE_AGENT = EXAMPLE_DIR / "agents" / "reference.yaml"
 
 @cache
 def docker_available() -> bool:
-    """True when a Docker daemon answers (checked once per session)."""
-    try:
-        import docker
+    """True when a Docker daemon answers (checked once per session).
 
-        client = docker.from_env()
-        client.ping()
-        client.close()
-    except Exception:  # noqa: BLE001 - any failure means "not available"
-        return False
-    return True
+    Without a daemon, the Docker SDK leaves the socket of the failed connection to the
+    garbage collector. It is collected here, where its ResourceWarning is expected, so it
+    cannot surface (as an error) during an unrelated test later.
+    """
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", ResourceWarning)
+        try:
+            import docker
+
+            client = docker.from_env()
+            try:
+                client.ping()
+            finally:
+                client.close()
+        except Exception:  # noqa: BLE001 - any failure means "not available"
+            available = False
+        else:
+            available = True
+        gc.collect()
+    return available
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
