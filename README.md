@@ -20,8 +20,9 @@ sandbox with hidden tests, and records everything needed to reproduce and audit 
 
 ## Highlights
 
-Measured 2026-10-16 on one laptop (CPU only;
-Windows 11, Docker Desktop 29.8.1). Raw data and method: [benchmarks/](benchmarks/README.md).
+Measured on one laptop (CPU only; Windows 11,
+Docker Desktop 29.8.1): the Claude models on 2026-10-17 (Claude Code 2.1.301), everything
+else on 2026-10-16. Raw data and method: [benchmarks/](benchmarks/README.md).
 
 - **Hosted Claude models as coding agents** (via Claude Code, acting only through the
   offline sandbox): on three bug-fix tasks x 3 repetitions, Haiku 5.5 passed **8/9**,
