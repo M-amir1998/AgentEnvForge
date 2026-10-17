@@ -6,6 +6,11 @@ All notable changes are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-10-17
+
+The first tagged release. It contains the single-run slice developed as v0.1 (never released
+on its own, listed under *Initial slice*) and batch experiments (Milestone 8).
+
 ### Added
 
 - **Batch experiments** (Milestone 8): `agentenv experiment validate|inspect|run|report`
@@ -57,6 +62,12 @@ All notable changes are documented here. The format follows
 
 ### Fixed
 
+- Every SQLite connection and Docker client is closed: Python 3.13+ warns about unclosed
+  SQLite connections, and on Linux and macOS the Docker client's Unix sockets warn when left
+  open (a streamed command's socket, a client whose ping failed, backends that were never
+  closed). The test suite turns these warnings into errors, so CI failed outside Windows.
+  `DockerSandboxBackend.close()` is new; `run`, `doctor`, `cleanup` and the experiment
+  executor close the backends they create.
 - Container leaks: a sandbox whose post-start verification failed, or that finished starting
   after its run had given up, is now always removed.
 - Docker transport errors (requests, OSError, Windows named-pipe errors) are reported as
@@ -98,3 +109,6 @@ All notable changes are documented here. The format follows
   `runs list|show|events|artifacts`, `cleanup`.
 - Self-contained example task (`examples/basic`) with a scripted reference agent.
 - Architecture documentation, ADRs 0001-0007, tutorials, CI workflow.
+
+[Unreleased]: https://github.com/M-amir1998/AgentEnvForge/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/M-amir1998/AgentEnvForge/releases/tag/v0.2.0
