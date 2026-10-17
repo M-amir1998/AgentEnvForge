@@ -48,6 +48,7 @@ from agentenvforge.domain.failures import (
 )
 from agentenvforge.domain.status import RunStatus
 from agentenvforge.execution.orchestrator import RunRequest
+from agentenvforge.sandbox.base import close_backend
 from agentenvforge.tasks.loader import discover_task_files, find_duplicate_ids, load_task
 from agentenvforge.tasks.schema import TaskSpec
 from agentenvforge.telemetry.logging import configure_logging
@@ -135,6 +136,8 @@ def cleanup(
     except AgentEnvForgeError as error:
         error_console.print(f"[red]{escape(error.message)}[/red]")
         raise typer.Exit(EXIT_INFRASTRUCTURE) from error
+    finally:
+        close_backend(backend)
     console.print(f"removed {len(removed)} sandbox(es)")
     for name in removed:
         console.print(f"  {name}")
@@ -260,11 +263,10 @@ def run(
 
     secrets = adapter_secrets(adapter)
     services = open_services(settings)
+    backend = create_backend(settings)
     previous_handler = signal.signal(signal.SIGTERM, _raise_cancelled)
     try:
-        orchestrator = services.orchestrator(
-            create_backend(settings), sinks=[render.ProgressPrinter(console)]
-        )
+        orchestrator = services.orchestrator(backend, sinks=[render.ProgressPrinter(console)])
         result = orchestrator.execute(
             RunRequest(
                 task=task,
@@ -277,6 +279,7 @@ def run(
         render.render_run_result(console, result, services.artifacts.location(result.run_id))
     finally:
         signal.signal(signal.SIGTERM, previous_handler)
+        close_backend(backend)
         services.close()
 
     if result.status is RunStatus.CANCELLED:

@@ -17,7 +17,7 @@ from importlib import metadata
 from agentenvforge._version import __version__
 from agentenvforge.config.settings import Settings
 from agentenvforge.domain.failures import AgentEnvForgeError
-from agentenvforge.sandbox.base import SandboxBackend
+from agentenvforge.sandbox.base import SandboxBackend, close_backend
 
 MINIMUM_PYTHON = (3, 12)
 _DISK_FAIL_BYTES = 1 * 1024**3
@@ -75,8 +75,9 @@ def check_docker(backend_factory: Callable[[], SandboxBackend]) -> list[CheckRes
             CheckResult("Docker SDK", CheckStatus.FAIL, "not installed", "reinstall agentenvforge")
         ]
     results = [CheckResult("Docker SDK", CheckStatus.OK, sdk_version)]
+    backend = backend_factory()
     try:
-        info = backend_factory().describe()
+        info = backend.describe()
     except AgentEnvForgeError as error:
         results.append(
             CheckResult(
@@ -87,6 +88,8 @@ def check_docker(backend_factory: Callable[[], SandboxBackend]) -> list[CheckRes
             )
         )
         return results
+    finally:
+        close_backend(backend)
     results.append(CheckResult("Docker daemon", CheckStatus.OK, f"Engine {info.version}"))
     results.append(
         CheckResult(

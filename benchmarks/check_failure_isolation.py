@@ -13,6 +13,7 @@ import csv
 import json
 import sys
 from collections import Counter
+from contextlib import closing
 from pathlib import Path
 
 EXPECTED = {
@@ -33,14 +34,14 @@ def leftover_containers(run_ids: list[str]) -> list[str] | None:
     except ImportError:
         return None
     try:
-        client = docker.from_env()
-        return [
-            str(container.name)
-            for run_id in run_ids
-            for container in client.containers.list(
-                all=True, filters={"label": f"{RUN_ID_LABEL}={run_id}"}
-            )
-        ]
+        with closing(docker.from_env()) as client:
+            return [
+                str(container.name)
+                for run_id in run_ids
+                for container in client.containers.list(
+                    all=True, filters={"label": f"{RUN_ID_LABEL}={run_id}"}
+                )
+            ]
     except DockerException:
         return None
 

@@ -18,7 +18,7 @@ import threading
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any
+from typing import Any, Self
 
 MIGRATIONS: tuple[str, ...] = (
     # 1: runs, events and artifact records
@@ -124,18 +124,28 @@ class SqliteDatabase:
         self._connection = sqlite3.connect(
             path, check_same_thread=False, timeout=10.0, isolation_level=None
         )
-        self._connection.row_factory = sqlite3.Row
-        self._connection.execute("PRAGMA journal_mode=WAL")
-        self._connection.execute("PRAGMA foreign_keys=ON")
-        # Safe with WAL: an OS crash can lose the last commits but never corrupts the file,
-        # and avoids an fsync per event, which matters with several runs writing at once.
-        self._connection.execute("PRAGMA synchronous=NORMAL")
-        self._migrate()
+        try:
+            self._connection.row_factory = sqlite3.Row
+            self._connection.execute("PRAGMA journal_mode=WAL")
+            self._connection.execute("PRAGMA foreign_keys=ON")
+            # Safe with WAL: an OS crash can lose the last commits but never corrupts the
+            # file, and avoids an fsync per event, which matters with several runs writing.
+            self._connection.execute("PRAGMA synchronous=NORMAL")
+            self._migrate()
+        except BaseException:
+            self._connection.close()  # a database that failed to open is not left open
+            raise
 
     def close(self) -> None:
         """Close the connection."""
         with self._lock:
             self._connection.close()
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(self, *_: object) -> None:
+        self.close()
 
     @property
     def schema_version(self) -> int:

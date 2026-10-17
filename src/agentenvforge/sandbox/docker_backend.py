@@ -323,6 +323,7 @@ class DockerSandboxBackend:
 
     @cached_property
     def _client(self) -> docker.DockerClient:
+        client: docker.DockerClient | None = None
         try:
             client = (
                 docker.DockerClient(base_url=self._docker_host)
@@ -331,10 +332,18 @@ class DockerSandboxBackend:
             )
             client.ping()
         except _DOCKER_ERRORS as error:
+            if client is not None:
+                client.close()  # do not leak the connection of a failed ping
             raise SandboxError(
                 f"cannot connect to the Docker daemon ({_DAEMON_HINT}): {error}"
             ) from error
         return client
+
+    def close(self) -> None:
+        """Release the Docker client's connections (it is created again if used later)."""
+        client = self.__dict__.pop("_client", None)
+        if client is not None:
+            client.close()
 
     def describe(self) -> BackendInfo:
         """Return Docker server version information and the resources available to it."""

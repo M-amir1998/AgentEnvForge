@@ -120,6 +120,17 @@ class Sandbox(Protocol):
         ...
 
 
+def close_backend(backend: object) -> None:
+    """Release a backend's resources (e.g. a Docker client's connections) if it holds any.
+
+    ``close`` is optional for backends, so fakes and future backends without resources need
+    not implement it.
+    """
+    close = getattr(backend, "close", None)
+    if callable(close):
+        close()
+
+
 @runtime_checkable
 class SandboxBackend(Protocol):
     """Creates sandboxes. Implementations: :class:`~.docker.DockerSandboxBackend`."""

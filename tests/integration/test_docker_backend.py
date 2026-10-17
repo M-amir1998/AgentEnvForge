@@ -43,8 +43,18 @@ except OSError:
 
 
 @pytest.fixture(scope="module")
-def backend() -> DockerSandboxBackend:
-    return DockerSandboxBackend()
+def backend() -> Iterator[DockerSandboxBackend]:
+    created = DockerSandboxBackend()
+    yield created
+    created.close()
+
+
+@pytest.fixture(scope="module")
+def client() -> Iterator[docker.DockerClient]:
+    """A raw Docker client for inspecting what the backend did."""
+    created = docker.from_env()
+    yield created
+    created.close()
 
 
 @pytest.fixture(scope="module")
@@ -83,8 +93,10 @@ def run(
     return result.exit_code, result.stdout + result.stderr, result.timed_out
 
 
-def test_container_is_hardened_as_documented(sandbox: DockerSandbox) -> None:
-    attrs = docker.from_env().containers.get(sandbox.sandbox_id).attrs
+def test_container_is_hardened_as_documented(
+    sandbox: DockerSandbox, client: docker.DockerClient
+) -> None:
+    attrs = client.containers.get(sandbox.sandbox_id).attrs
     host = attrs["HostConfig"]
     assert host["Privileged"] is False
     assert host["CapDrop"] == ["ALL"]
@@ -160,7 +172,9 @@ def test_directory_round_trip(sandbox: DockerSandbox, tmp_path: Path) -> None:
 
 
 def test_destroy_is_idempotent_and_orphans_are_found(
-    backend: DockerSandboxBackend, image: PreparedImage
+    backend: DockerSandboxBackend,
+    image: PreparedImage,
+    client: docker.DockerClient,
 ) -> None:
     run_id = new_run_id()
     config = SandboxConfig(
@@ -175,20 +189,19 @@ def test_destroy_is_idempotent_and_orphans_are_found(
         owner=Ownership(1000, 1000),
     )
     backend.create_sandbox(config)  # "forgotten" by a crashed process
-    labelled = docker.from_env().containers.list(
-        all=True, filters={"label": f"{LABEL_RUN_ID}={run_id}"}
-    )
+    labelled = client.containers.list(all=True, filters={"label": f"{LABEL_RUN_ID}={run_id}"})
     assert len(labelled) == 1
     assert backend.remove_orphaned_sandboxes(run_id) == [f"agentenv-{run_id}-grader"]
     assert backend.remove_orphaned_sandboxes(run_id) == []
 
 
 def test_containers_started_by_others_from_our_images_are_not_sandboxes(
-    backend: DockerSandboxBackend, image: PreparedImage
+    backend: DockerSandboxBackend,
+    image: PreparedImage,
+    client: docker.DockerClient,
 ) -> None:
     """Regression: image labels are inherited by every container created from the image,
     so a user's `docker run <our image>` must not be mistaken for (and deleted as) a sandbox."""
-    client = docker.from_env()
     foreign = client.containers.create(
         image.image_id, command=["true"], labels={LABEL_MANAGED: "true"}
     )
@@ -200,7 +213,9 @@ def test_containers_started_by_others_from_our_images_are_not_sandboxes(
 
 
 def test_dockerfile_build_is_cached_and_failures_are_classified(
-    backend: DockerSandboxBackend, tmp_path: Path
+    backend: DockerSandboxBackend,
+    tmp_path: Path,
+    client: docker.DockerClient,
 ) -> None:
     context = tmp_path / "context"
     context.mkdir()
@@ -217,7 +232,7 @@ def test_dockerfile_build_is_cached_and_failures_are_classified(
     second = backend.prepare_image(spec)
     assert not first.cached and second.cached
     assert first.image_id == second.image_id
-    docker.from_env().images.remove(first.reference, force=True)
+    client.images.remove(first.reference, force=True)
 
     (context / "Dockerfile").write_text(f"FROM {IMAGE}\nRUN exit 3\n")
     failing = ImageSpec(
