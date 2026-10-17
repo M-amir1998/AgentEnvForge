@@ -1,23 +1,16 @@
 """SQLite implementation of :class:`~.repository.RunRepository`.
 
-Why the stdlib ``sqlite3`` module rather than an ORM (ADR-004): the schema is three small
-tables accessed through one class, so an ORM would add a large dependency without
-removing meaningful code. Schema changes are versioned migrations in
-:data:`MIGRATIONS`, applied automatically and recorded in ``schema_migrations``, so every
-database is reproducibly at a known schema version.
-
-Concurrency: one connection per repository guarded by a lock (events arrive from agent
-worker threads), WAL journaling so readers (``agentenv runs list``) never block a running
-execution, and a busy timeout so separate processes queue instead of failing.
+Why the stdlib ``sqlite3`` module rather than an ORM (ADR-0004): the schema is a few small
+tables accessed through small repository classes, so an ORM would add a large dependency
+without removing meaningful code. Connection handling, concurrency and migrations live in
+:mod:`agentenvforge.persistence.sqlite_database`, shared with the experiment repository.
 """
 
 from __future__ import annotations
 
 import json
 import sqlite3
-import threading
-from collections.abc import Iterator
-from contextlib import contextmanager
+from contextlib import AbstractContextManager
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -28,54 +21,9 @@ from agentenvforge.domain.manifest import RunManifest
 from agentenvforge.domain.results import RunResult
 from agentenvforge.domain.status import RunStatus
 from agentenvforge.persistence.repository import NewRun, RunSummary, StoredRun
+from agentenvforge.persistence.sqlite_database import MIGRATIONS, SqliteDatabase
 
-MIGRATIONS: tuple[str, ...] = (
-    # 1: initial schema
-    """
-    CREATE TABLE runs (
-        run_id          TEXT PRIMARY KEY,
-        task_id         TEXT NOT NULL,
-        task_path       TEXT NOT NULL,
-        agent           TEXT NOT NULL,
-        status          TEXT NOT NULL,
-        created_at      TEXT NOT NULL,
-        updated_at      TEXT NOT NULL,
-        finished_at     TEXT,
-        passed          INTEGER,
-        score           REAL,
-        failure_reason  TEXT,
-        duration_ms     INTEGER,
-        manifest_json   TEXT NOT NULL,
-        result_json     TEXT
-    );
-    CREATE INDEX runs_task_id ON runs (task_id);
-    CREATE INDEX runs_status ON runs (status);
-    CREATE INDEX runs_created_at ON runs (created_at);
-
-    CREATE TABLE events (
-        event_id     TEXT PRIMARY KEY,
-        run_id       TEXT NOT NULL REFERENCES runs (run_id),
-        task_id      TEXT NOT NULL,
-        sequence     INTEGER NOT NULL,
-        timestamp    TEXT NOT NULL,
-        event_type   TEXT NOT NULL,
-        status       TEXT NOT NULL,
-        duration_ms  INTEGER,
-        data_json    TEXT NOT NULL,
-        UNIQUE (run_id, sequence)
-    );
-
-    CREATE TABLE artifacts (
-        artifact_id  TEXT PRIMARY KEY,
-        run_id       TEXT NOT NULL REFERENCES runs (run_id),
-        name         TEXT NOT NULL,
-        size_bytes   INTEGER NOT NULL,
-        sha256       TEXT NOT NULL,
-        created_at   TEXT NOT NULL,
-        UNIQUE (run_id, name)
-    );
-    """,
-)
+__all__ = ["MIGRATIONS", "SqliteRunRepository"]
 
 
 def _timestamp(value: datetime) -> str:
@@ -87,52 +35,30 @@ def _parse_timestamp(value: str) -> datetime:
 
 
 class SqliteRunRepository:
-    """Run repository stored in a single SQLite file."""
+    """Run repository stored in a SQLite database.
 
-    def __init__(self, path: Path) -> None:
-        path.parent.mkdir(parents=True, exist_ok=True)
-        self._lock = threading.Lock()
-        self._connection = sqlite3.connect(path, check_same_thread=False, timeout=10.0)
-        self._connection.row_factory = sqlite3.Row
-        self._connection.execute("PRAGMA journal_mode=WAL")
-        self._connection.execute("PRAGMA foreign_keys=ON")
-        self._migrate()
+    Accepts an open :class:`SqliteDatabase` (shared with other repositories; the caller
+    closes it) or a path, for which it opens and owns its own database.
+    """
+
+    def __init__(self, database: SqliteDatabase | Path) -> None:
+        self._owns_database = not isinstance(database, SqliteDatabase)
+        self._database = (
+            database if isinstance(database, SqliteDatabase) else SqliteDatabase(database)
+        )
 
     def close(self) -> None:
-        """Close the underlying connection."""
-        with self._lock:
-            self._connection.close()
+        """Close the database if this repository opened it."""
+        if self._owns_database:
+            self._database.close()
 
     @property
     def schema_version(self) -> int:
         """Number of migrations applied."""
-        row = self._connection.execute("SELECT MAX(version) FROM schema_migrations").fetchone()
-        return int(row[0] or 0)
+        return self._database.schema_version
 
-    @contextmanager
-    def _transaction(self) -> Iterator[sqlite3.Connection]:
-        # One lock + one transaction per logical write keeps each operation atomic.
-        with self._lock, self._connection:
-            yield self._connection
-
-    def _migrate(self) -> None:
-        with self._transaction() as connection:
-            connection.execute(
-                "CREATE TABLE IF NOT EXISTS schema_migrations "
-                "(version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)"
-            )
-        current = self.schema_version
-        for version, script in enumerate(MIGRATIONS, start=1):
-            if version <= current:
-                continue
-            with self._transaction() as connection:
-                for statement in filter(str.strip, script.split(";")):
-                    connection.execute(statement)
-                connection.execute(
-                    "INSERT INTO schema_migrations (version, applied_at) "
-                    "VALUES (?, datetime('now'))",
-                    (version,),
-                )
+    def _transaction(self) -> AbstractContextManager[sqlite3.Connection]:
+        return self._database.transaction()
 
     # ------------------------------------------------------------------ writes
 
@@ -229,8 +155,7 @@ class SqliteRunRepository:
     # ------------------------------------------------------------------- reads
 
     def _query(self, sql: str, parameters: tuple[Any, ...] = ()) -> list[sqlite3.Row]:
-        with self._lock:
-            return list(self._connection.execute(sql, parameters).fetchall())
+        return self._database.query(sql, parameters)
 
     @staticmethod
     def _summary(row: sqlite3.Row) -> RunSummary:

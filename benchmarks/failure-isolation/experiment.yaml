@@ -1,0 +1,46 @@
+# Failure-isolation benchmark: does one run's failure stay inside that run?
+#
+# Every agent here is a deterministic test agent with a known outcome (none is an AI agent):
+#
+#   oracle    reference  applies the maintainers' fix          -> passed
+#   noop      baseline   changes nothing                       -> failed (graded)
+#   failing   subject    exits 1 without changes               -> failed (graded)
+#   sleeper   subject    hangs; 5 s agent budget               -> agent_timeout
+#   crasher   subject    host-side adapter raises              -> agent_error
+#
+# Runs of all five execute side by side (2 workers, shuffled order). The benchmark passes
+# when every run ends with its expected outcome, every sandbox is removed, and the
+# experiment completes:
+#
+#   agentenv experiment run benchmarks/failure-isolation/experiment.yaml --overwrite
+#   python benchmarks/check_failure_isolation.py benchmarks/results/failure-isolation
+schema_version: "1"
+id: failure-isolation
+name: Failure isolation under concurrency
+description: >
+  Deterministic agents with known outcomes (pass, graded failure, agent timeout, adapter
+  crash) run side by side; each failure must stay inside its own run.
+tags: [benchmark, infrastructure]
+tasks:
+  - ../../examples/off-by-one/task.yaml
+  - ../../examples/lru-cache/task.yaml
+agents:
+  - id: oracle
+    role: reference
+    spec: ../../examples/agents/oracle/oracle.yaml
+  - id: noop
+    role: baseline
+    agent: {type: noop}
+  - id: failing
+    spec: ../../examples/agents/deterministic/failing.yaml
+  - id: sleeper
+    spec: ../../examples/agents/deterministic/sleeper.yaml
+    agent_timeout_seconds: 5
+  - id: crasher
+    spec: ../../examples/agents/deterministic/crasher.yaml
+repetitions: 2
+execution:
+  workers: 2
+  base_seed: 0
+output:
+  directory: ../results/failure-isolation

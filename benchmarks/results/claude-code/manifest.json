@@ -1,0 +1,266 @@
+{
+  "manifest_version": 1,
+  "agentenvforge_version": "0.1.0.dev0",
+  "experiment_schema_version": "1",
+  "spec_id": "claude-code",
+  "name": "Claude models as coding agents (Claude Code with sandbox tools)",
+  "description": "Claude Haiku 5.5, Sonnet 5.5 and Opus 5.5 driven by Claude Code on an easy, a medium and a hard bug-fix task, three repetitions each, validated by an oracle and a noop baseline.\n",
+  "definition_hash": "93d337f9db8bf7bcb1da2951bf9e96c38e935261df57e063e3f2e245d3f588d1",
+  "definition": {
+    "schema_version": "1",
+    "id": "claude-code",
+    "name": "Claude models as coding agents (Claude Code with sandbox tools)",
+    "description": "Claude Haiku 5.5, Sonnet 5.5 and Opus 5.5 driven by Claude Code on an easy, a medium and a hard bug-fix task, three repetitions each, validated by an oracle and a noop baseline.\n",
+    "tags": [
+      "benchmark",
+      "llm",
+      "claude",
+      "hosted"
+    ],
+    "tasks": [
+      "../../examples/off-by-one/task.yaml",
+      "../../examples/lru-cache/task.yaml",
+      "../../examples/basic/task.yaml"
+    ],
+    "agents": [
+      {
+        "id": "claude-haiku-5-5",
+        "spec": "../../examples/agents/claude-code/claude-haiku-5-5.yaml",
+        "agent": null,
+        "agent_timeout_seconds": 600,
+        "options": {
+          "usage_guard": 0.98
+        },
+        "role": "subject"
+      },
+      {
+        "id": "claude-sonnet-5-5",
+        "spec": "../../examples/agents/claude-code/claude-sonnet-5-5.yaml",
+        "agent": null,
+        "agent_timeout_seconds": 600,
+        "options": {
+          "usage_guard": 0.98
+        },
+        "role": "subject"
+      },
+      {
+        "id": "claude-opus-5-5",
+        "spec": "../../examples/agents/claude-code/claude-opus-5-5.yaml",
+        "agent": null,
+        "agent_timeout_seconds": 600,
+        "options": {
+          "usage_guard": 0.98
+        },
+        "role": "subject"
+      },
+      {
+        "id": "oracle",
+        "spec": "../../examples/agents/oracle/oracle.yaml",
+        "agent": null,
+        "agent_timeout_seconds": null,
+        "options": null,
+        "role": "reference"
+      },
+      {
+        "id": "noop",
+        "spec": null,
+        "agent": {
+          "type": "noop"
+        },
+        "agent_timeout_seconds": null,
+        "options": null,
+        "role": "baseline"
+      }
+    ],
+    "repetitions": 3,
+    "execution": {
+      "workers": 3,
+      "base_seed": 0
+    },
+    "output": {
+      "directory": "../results/claude-code"
+    }
+  },
+  "tasks": [
+    {
+      "task_id": "moving-average-off-by-one",
+      "path": "../../examples/off-by-one/task.yaml",
+      "schema_version": "1",
+      "definition_hash": "a5302f056f1e59b0307004d197334033c3b1f2b4c3a57642ee10c66b28e66525",
+      "image_reference": "agentenvforge/moving-average-off-by-one:2892ab784d6b77f9bd936f6e",
+      "image_id": "sha256:d9b518c5eefadce990e3f63a19ac1dc89394fad4131a813b20cea1c872cbe7fe",
+      "image_cached": true,
+      "image_prepare_seconds": 0.015
+    },
+    {
+      "task_id": "lru-cache-recency",
+      "path": "../../examples/lru-cache/task.yaml",
+      "schema_version": "1",
+      "definition_hash": "a2a51fa84d19a6073d53347d6782e037d9387dadc1d0737620bb22f76467da78",
+      "image_reference": "agentenvforge/lru-cache-recency:2892ab784d6b77f9bd936f6e",
+      "image_id": "sha256:7955c559c6bcaa839cdef211dd459cf8d914159c90a7045dae938ee942ee0e7c",
+      "image_cached": true,
+      "image_prepare_seconds": 0.032
+    },
+    {
+      "task_id": "ledger-transaction-rollback",
+      "path": "../../examples/basic/task.yaml",
+      "schema_version": "1",
+      "definition_hash": "cb82738636c166c1f810d78745a61ef3dc63d3dd8c02a91a7b5602618bef76f7",
+      "image_reference": "agentenvforge/ledger-transaction-rollback:2892ab784d6b77f9bd936f6e",
+      "image_id": "sha256:a5863c4d57ea9031d5b28b469f35fccb2ce76024522d3a4a5e93ca72249070e1",
+      "image_cached": true,
+      "image_prepare_seconds": 0.015
+    }
+  ],
+  "agents": [
+    {
+      "agent_id": "claude-haiku-5-5",
+      "role": "subject",
+      "adapter": "claude-code:claude-haiku-5-5",
+      "source": "../../examples/agents/claude-code/claude-haiku-5-5.yaml",
+      "spec": {
+        "schema_version": "1",
+        "name": "claude-code-haiku-5-5",
+        "type": "python",
+        "adapter": "claude_code_agent:build",
+        "path": ".",
+        "options": {
+          "model": "claude-haiku-5-5",
+          "usage_guard": 0.98
+        }
+      },
+      "spec_hash": "d06078c0c2dbe44b34e2e4e79e24b86ed553a4851e67ca26237a1bd7ef57685b",
+      "code_hash": "0e11aee162f7abd52874efd0aa4943d556d8f5ae1f99afd460973bded966050d",
+      "agent_timeout_seconds": 600,
+      "provenance": {
+        "claude_code_version": "2.1.301",
+        "model": "claude-haiku-5-5",
+        "auth_method": "claude.ai",
+        "effort": "default",
+        "isolated": true,
+        "usage_guard": 0.98,
+        "max_budget_usd": null
+      }
+    },
+    {
+      "agent_id": "claude-sonnet-5-5",
+      "role": "subject",
+      "adapter": "claude-code:claude-sonnet-5-5",
+      "source": "../../examples/agents/claude-code/claude-sonnet-5-5.yaml",
+      "spec": {
+        "schema_version": "1",
+        "name": "claude-code-sonnet-5-5",
+        "type": "python",
+        "adapter": "claude_code_agent:build",
+        "path": ".",
+        "options": {
+          "model": "claude-sonnet-5-5",
+          "usage_guard": 0.98
+        }
+      },
+      "spec_hash": "066d72912d3d28d35fb4c85868e2e74ca926aaafe1400b8c07bd9985d12c5958",
+      "code_hash": "0e11aee162f7abd52874efd0aa4943d556d8f5ae1f99afd460973bded966050d",
+      "agent_timeout_seconds": 600,
+      "provenance": {
+        "claude_code_version": "2.1.301",
+        "model": "claude-sonnet-5-5",
+        "auth_method": "claude.ai",
+        "effort": "default",
+        "isolated": true,
+        "usage_guard": 0.98,
+        "max_budget_usd": null
+      }
+    },
+    {
+      "agent_id": "claude-opus-5-5",
+      "role": "subject",
+      "adapter": "claude-code:claude-opus-5-5",
+      "source": "../../examples/agents/claude-code/claude-opus-5-5.yaml",
+      "spec": {
+        "schema_version": "1",
+        "name": "claude-code-opus-5-5",
+        "type": "python",
+        "adapter": "claude_code_agent:build",
+        "path": ".",
+        "options": {
+          "model": "claude-opus-5-5",
+          "usage_guard": 0.98
+        }
+      },
+      "spec_hash": "01a60037bb5a9fbd3baeb0590574223d141ddd82e7266c4ab88dbba50bc02db2",
+      "code_hash": "0e11aee162f7abd52874efd0aa4943d556d8f5ae1f99afd460973bded966050d",
+      "agent_timeout_seconds": 600,
+      "provenance": {
+        "claude_code_version": "2.1.301",
+        "model": "claude-opus-5-5",
+        "auth_method": "claude.ai",
+        "effort": "default",
+        "isolated": true,
+        "usage_guard": 0.98,
+        "max_budget_usd": null
+      }
+    },
+    {
+      "agent_id": "oracle",
+      "role": "reference",
+      "adapter": "command:oracle",
+      "source": "../../examples/agents/oracle/oracle.yaml",
+      "spec": {
+        "schema_version": "1",
+        "name": "oracle",
+        "type": "command",
+        "command": [
+          "sh",
+          "-c",
+          "test -d \"/agent/$AGENTENV_TASK_ID\" || { echo \"no reference solution for $AGENTENV_TASK_ID\" >&2; exit 2; }; cp -r \"/agent/$AGENTENV_TASK_ID/.\" \"$AGENTENV_WORKSPACE/\""
+        ],
+        "files": "overlays",
+        "environment": {},
+        "secrets": []
+      },
+      "spec_hash": "abdf0ccb9d9c15349075ce68c72d9e7997cb29b4b6dd39d8c8ce6cfda99e78ab",
+      "code_hash": "2af4bc1c9a4683921070144f2e16ff63f6385b7f77c17a7a5236ecd13e27c652",
+      "agent_timeout_seconds": null,
+      "provenance": {}
+    },
+    {
+      "agent_id": "noop",
+      "role": "baseline",
+      "adapter": "noop",
+      "source": "inline",
+      "spec": {
+        "schema_version": "1",
+        "name": "noop",
+        "type": "noop"
+      },
+      "spec_hash": "eaaa19a25fd71d98e94fece67247e96b30fb2d6bdc7caad9ff0181e0c7fa2239",
+      "code_hash": null,
+      "agent_timeout_seconds": null,
+      "provenance": {}
+    }
+  ],
+  "repetitions": 3,
+  "workers": 3,
+  "base_seed": 0,
+  "matrix_order": "interleaved-rounds, agent order shuffled per block (seed = base_seed)",
+  "planned_runs": 45,
+  "environment": {
+    "os": "Windows",
+    "os_release": "11",
+    "architecture": "AMD64",
+    "python_version": "3.12.10",
+    "cpu_model": null,
+    "logical_cpus": null,
+    "memory_bytes": null,
+    "sandbox_backend": "docker",
+    "sandbox_backend_version": "29.8.1",
+    "sandbox_details": {
+      "api_version": "1.56",
+      "os": "linux",
+      "arch": "amd64",
+      "operating_system": "Docker Desktop",
+      "storage_driver": "overlayfs"
+    }
+  }
+}

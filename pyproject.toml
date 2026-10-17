@@ -39,9 +39,15 @@ Changelog = "https://github.com/M-amir1998/AgentEnvForge/blob/main/CHANGELOG.md"
 [project.scripts]
 agentenv = "agentenvforge.cli.app:main"
 
+[project.optional-dependencies]
+plots = [
+    "matplotlib>=3.9",
+]
+
 [dependency-groups]
 dev = [
     "hypothesis>=6.120",
+    "matplotlib>=3.9",
     "mypy>=1.13",
     "pre-commit>=4.0",
     "pytest>=8.3",
@@ -98,6 +104,7 @@ ignore = [
 "tests/**" = ["S101", "S105", "S108", "PLR2004", "T20", "PLC0415"]
 "examples/**" = ["T20", "S101", "INP001", "N818", "S603", "BLE001"]  # incl. buggy code
 "scripts/**" = ["T20"]
+"benchmarks/**" = ["T20", "INP001"]  # command-line scripts
 "src/agentenvforge/cli/**" = ["PLR0912", "PLR0917", "B008"]  # Typer: one parameter per option
 
 # ---------------------------------------------------------------- mypy
@@ -105,8 +112,8 @@ ignore = [
 python_version = "3.12"
 strict = true
 # The example Ollama agent is type-checked too; tests import it by module name.
-files = ["src", "tests", "examples/agents/ollama"]
-mypy_path = "examples/agents/ollama"
+files = ["src", "tests", "examples/agents/ollama", "examples/agents/claude-code", "benchmarks"]
+mypy_path = ["examples/agents/ollama", "examples/agents/claude-code"]
 plugins = ["pydantic.mypy"]
 warn_unreachable = true
 enable_error_code = ["ignore-without-code", "redundant-expr", "truthy-bool"]
@@ -119,7 +126,7 @@ disallow_untyped_decorators = false
 [tool.pytest.ini_options]
 minversion = "8.0"
 testpaths = ["tests"]
-pythonpath = ["examples/agents/ollama"]
+pythonpath = ["examples/agents/ollama", "examples/agents/claude-code"]
 addopts = ["-ra", "--strict-markers", "--strict-config"]
 markers = [
     "docker: requires a reachable Docker daemon (skipped otherwise)",

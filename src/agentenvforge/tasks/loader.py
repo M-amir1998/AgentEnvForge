@@ -46,6 +46,15 @@ class LoadedTask:
         """Resolve a validated host path from the specification."""
         return (self.root / relative).resolve()
 
+    def build_context(self) -> Path | None:
+        """The Dockerfile's build context directory (``None`` for a prebuilt image)."""
+        environment = self.spec.environment
+        if environment.dockerfile is None:
+            return None
+        if environment.context:
+            return self.host_path(environment.context)
+        return self.host_path(environment.dockerfile).parent
+
 
 def load_task(path: Path) -> LoadedTask:
     """Load, validate and return the task at ``path``."""

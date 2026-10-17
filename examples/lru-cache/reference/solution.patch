@@ -1,0 +1,21 @@
+diff --git a/cache/lru.py b/cache/lru.py
+index e419a59..13e0d1b 100644
+--- a/cache/lru.py
++++ b/cache/lru.py
+@@ -30,12 +30,15 @@ class LRUCache:
+         """Return the value stored for ``key``, or ``default`` if it is not cached."""
+         if key not in self._entries:
+             return default
++        self._entries.move_to_end(key)
+         return self._entries[key]
+ 
+     def put(self, key: Hashable, value: Any) -> None:
+         """Insert or update ``key``. When the cache is full, the least recently used entry
+         is evicted to make room for a new key."""
+-        if len(self._entries) >= self.capacity:
++        if key in self._entries:
++            self._entries.move_to_end(key)
++        elif len(self._entries) >= self.capacity:
+             self._entries.popitem(last=False)
+         self._entries[key] = value
+ 

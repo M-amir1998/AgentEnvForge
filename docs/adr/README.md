@@ -13,6 +13,8 @@ changed decision gets a new ADR that supersedes the old one.
 | [0005](0005-event-model.md) | Append-only sequenced events with a single write path |
 | [0006](0006-layering-and-dependency-direction.md) | Layering and dependency direction |
 | [0007](0007-separate-grading-sandbox.md) | Grade in a fresh sandbox with hidden assets and protected paths |
+| [0008](0008-local-batch-execution.md) | Local batch execution: bounded threads over the unchanged single-run orchestrator |
+| [0009](0009-experiment-statistics.md) | Experiment statistics: scored outcomes, Wilson intervals, gated pass@k |
 
 Template: copy an existing ADR and keep the sections *Context*, *Options considered*,
 *Decision*, *Consequences*, *Limitations*.

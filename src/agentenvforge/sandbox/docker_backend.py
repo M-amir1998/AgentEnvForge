@@ -20,11 +20,14 @@ including the official ``python`` images, satisfy both.
 
 from __future__ import annotations
 
+import contextvars
+import importlib
 import json
 import logging
 import re
 import tempfile
 import threading
+import time
 from collections.abc import Iterator
 from functools import cached_property
 from pathlib import PurePosixPath
@@ -33,6 +36,7 @@ from typing import IO, Any
 import docker
 import docker.credentials.errors
 import docker.errors
+import requests.exceptions
 from docker.models.containers import Container
 
 from agentenvforge.domain.clock import elapsed_ms, monotonic_ms, utc_now
@@ -44,6 +48,7 @@ from agentenvforge.domain.failures import (
     SandboxPathNotFoundError,
     SandboxStartError,
 )
+from agentenvforge.processes import Owner, process_exists
 from agentenvforge.sandbox.base import (
     BackendInfo,
     ImageSpec,
@@ -63,6 +68,9 @@ LABEL_IMAGE = "io.agentenvforge.image"
 """Image label: marks images built by AgentEnvForge (never used to find sandboxes)."""
 LABEL_TASK_ID = "io.agentenvforge.task-id"
 LABEL_ROLE = "io.agentenvforge.role"
+LABEL_OWNER = "io.agentenvforge.owner"
+"""``<host hash>:<pid>`` of the creating process; orphan cleanup never removes a sandbox whose
+owner is still alive (see :mod:`agentenvforge.processes`)."""
 
 _KILL_GRACE_SECONDS = 5
 """After a command's timeout, `timeout` sends SIGTERM, then SIGKILL this much later."""
@@ -78,9 +86,36 @@ _CREDENTIAL_HINT = (
     "(restart the shell after installing Docker Desktop)"
 )
 
-# Errors from the Docker SDK that are infrastructure failures. Credential-helper errors
-# do not derive from DockerException, so they are listed explicitly.
-_DOCKER_ERRORS = (docker.errors.DockerException, docker.credentials.errors.StoreError)
+_EXIT_STATUS_WAIT_SECONDS = 5.0
+"""How long to wait for Docker to record an exec's exit status after its output ends."""
+_PROBE_ATTEMPTS = 3
+
+
+def _transport_errors() -> tuple[type[BaseException], ...]:
+    """Every exception class that means "talking to the Docker daemon failed".
+
+    The SDK wraps HTTP errors in DockerException, but connection-level failures surface as
+    requests exceptions, OSError, or (Windows named pipe) pywintypes.error. All of them must
+    become SandboxError, or they would be misclassified and could escape cleanup.
+    """
+    errors: list[type[BaseException]] = [
+        docker.errors.DockerException,
+        docker.credentials.errors.StoreError,
+        requests.exceptions.RequestException,
+        OSError,
+    ]
+    try:
+        # Imported dynamically: pywin32 exists (and is needed) only on Windows.
+        pywintypes = importlib.import_module("pywintypes")
+    except ImportError:
+        pass
+    else:
+        errors.append(pywintypes.error)
+    return tuple(errors)
+
+
+_DOCKER_ERRORS = _transport_errors()
+_START_ERRORS: tuple[type[BaseException], ...] = (SandboxError, *_DOCKER_ERRORS)
 
 
 class _BoundedBuffer:
@@ -144,8 +179,11 @@ class DockerSandbox:
             logger.warning("command watchdog fired; killing sandbox %s", self._name)
             self._kill_quietly()
 
+        # The timer thread runs in a copy of this context so its log line carries the run ID.
         watchdog = threading.Timer(
-            timeout + _KILL_GRACE_SECONDS + _WATCHDOG_GRACE_SECONDS, _watchdog
+            timeout + _KILL_GRACE_SECONDS + _WATCHDOG_GRACE_SECONDS,
+            contextvars.copy_context().run,
+            args=(_watchdog,),
         )
         watchdog.daemon = True
         exit_code: int | None = None
@@ -166,9 +204,8 @@ class DockerSandbox:
                     stdout.append(out_chunk)
                 if err_chunk:
                     stderr.append(err_chunk)
-            raw_exit = self._client.api.exec_inspect(exec_id).get("ExitCode")
-            exit_code = int(raw_exit) if raw_exit is not None else None
-        except docker.errors.DockerException as error:
+            exit_code = self._wait_for_exit_code(exec_id)
+        except _DOCKER_ERRORS as error:
             if not watchdog_fired.is_set():
                 raise SandboxError(
                     f"command execution failed in sandbox {self._name}: {error}",
@@ -194,11 +231,29 @@ class DockerSandbox:
             timed_out=timed_out,
         )
 
+    def _wait_for_exit_code(self, exec_id: str) -> int | None:
+        """Return the exec's exit status once Docker has recorded it.
+
+        The end of the output stream does not by itself prove that the process exited (a
+        process can close its output early, and the stream can end on a transport hiccup), so
+        the state is observed instead of assumed: poll briefly until ``Running`` is false.
+        """
+        deadline = time.monotonic() + _EXIT_STATUS_WAIT_SECONDS
+        while True:
+            info = self._client.api.exec_inspect(exec_id)
+            exit_code = info.get("ExitCode")
+            if not info.get("Running") and exit_code is not None:
+                return int(exit_code)
+            if time.monotonic() >= deadline:
+                logger.warning("no exit status recorded for exec %s in %s", exec_id, self._name)
+                return None
+            time.sleep(0.05)
+
     def put_archive(self, destination: PurePosixPath, archive: IO[bytes]) -> None:
         """Extract ``archive`` into ``destination`` (performed by the Docker daemon)."""
         try:
             accepted = self._container.put_archive(destination.as_posix(), archive.read())
-        except docker.errors.DockerException as error:
+        except _DOCKER_ERRORS as error:
             raise SandboxError(
                 f"cannot copy files into {self._name}:{destination}: {error}"
             ) from error
@@ -221,7 +276,7 @@ class DockerSandbox:
                 buffer.write(chunk)
         except docker.errors.NotFound as error:
             raise SandboxPathNotFoundError(f"{self._name}:{path} does not exist") from error
-        except docker.errors.DockerException as error:
+        except _DOCKER_ERRORS as error:
             raise SandboxError(f"cannot copy {self._name}:{path}: {error}") from error
         buffer.seek(0)
         return buffer
@@ -243,14 +298,14 @@ class DockerSandbox:
                 # 409: removal already in progress (e.g. racing the watchdog) - fine.
                 if error.status_code != 409:
                     raise SandboxError(f"cannot remove sandbox {self._name}: {error}") from error
-            except docker.errors.DockerException as error:
+            except _DOCKER_ERRORS as error:
                 raise SandboxError(f"cannot remove sandbox {self._name}: {error}") from error
             self._destroyed = True
 
     def _kill_quietly(self) -> None:
         try:
             self._container.kill()
-        except docker.errors.DockerException as error:
+        except _DOCKER_ERRORS as error:
             # Best effort: destroy() during cleanup will retry removal and report failure.
             logger.warning("could not kill sandbox %s: %s", self._name, error)
 
@@ -275,17 +330,18 @@ class DockerSandboxBackend:
                 else docker.from_env()
             )
             client.ping()
-        except docker.errors.DockerException as error:
+        except _DOCKER_ERRORS as error:
             raise SandboxError(
                 f"cannot connect to the Docker daemon ({_DAEMON_HINT}): {error}"
             ) from error
         return client
 
     def describe(self) -> BackendInfo:
-        """Return Docker server version information."""
+        """Return Docker server version information and the resources available to it."""
         try:
             version: dict[str, Any] = self._client.version()
-        except docker.errors.DockerException as error:
+            info: dict[str, Any] = self._client.info()
+        except _DOCKER_ERRORS as error:
             raise SandboxError(f"cannot query Docker version: {error}") from error
         return BackendInfo(
             name=self.name,
@@ -294,6 +350,12 @@ class DockerSandboxBackend:
                 "api_version": str(version.get("ApiVersion", "unknown")),
                 "os": str(version.get("Os", "unknown")),
                 "arch": str(version.get("Arch", "unknown")),
+                # Resources of the Docker host / VM (on Docker Desktop: the VM's allocation),
+                # which bound what parallel runs can achieve.
+                "cpus": str(info.get("NCPU", "unknown")),
+                "memory_bytes": str(info.get("MemTotal", "unknown")),
+                "operating_system": str(info.get("OperatingSystem", "unknown")),
+                "storage_driver": str(info.get("Driver", "unknown")),
             },
         )
 
@@ -325,7 +387,7 @@ class DockerSandboxBackend:
             return _prepared(tag, image, cached=True)
         except docker.errors.ImageNotFound:
             pass
-        except docker.errors.DockerException as error:
+        except _DOCKER_ERRORS as error:
             raise SandboxBuildError(f"cannot inspect image {tag}: {error}") from error
 
         dockerfile = spec.dockerfile.relative_to(spec.context).as_posix()
@@ -347,7 +409,7 @@ class DockerSandboxBackend:
             ) from error
         except docker.credentials.errors.StoreError as error:
             raise SandboxBuildError(f"image build failed: {_CREDENTIAL_HINT}: {error}") from error
-        except docker.errors.DockerException as error:
+        except _DOCKER_ERRORS as error:
             raise SandboxBuildError(f"image build failed: {error}") from error
         return _prepared(tag, image, cached=False, build_log=_render_build_log(log_stream))
 
@@ -356,7 +418,7 @@ class DockerSandboxBackend:
             return _prepared(reference, self._client.images.get(reference), cached=True)
         except docker.errors.ImageNotFound:
             logger.info("pulling image %s", reference)
-        except docker.errors.DockerException as error:
+        except _DOCKER_ERRORS as error:
             raise SandboxBuildError(f"cannot inspect image {reference}: {error}") from error
         try:
             image = self._client.images.pull(reference)
@@ -381,6 +443,7 @@ class DockerSandboxBackend:
                     LABEL_RUN_ID: config.run_id,
                     LABEL_TASK_ID: config.task_id,
                     LABEL_ROLE: config.role.value,
+                    LABEL_OWNER: Owner.current().token(),
                 },
                 user=f"{config.owner.uid}:{config.owner.gid}",
                 environment=environment,
@@ -394,17 +457,35 @@ class DockerSandboxBackend:
                 init=True,
                 privileged=False,
             )
-        except docker.errors.DockerException as error:
+        except _DOCKER_ERRORS as error:
             self._remove_by_name(name)
             raise SandboxStartError(f"cannot start sandbox {name}: {error}") from error
 
         sandbox = DockerSandbox(self._client, container, name)
         try:
             self._verify_running(container, sandbox)
-        except SandboxStartError:
-            sandbox.destroy()
-            raise
+        except _START_ERRORS as error:
+            # The container exists now, but the caller only learns about sandboxes that are
+            # returned: remove it here, whatever went wrong, or it would outlive the run.
+            self._destroy_quietly(sandbox)
+            if isinstance(error, SandboxStartError):
+                raise
+            raise SandboxStartError(
+                f"sandbox {name} failed its readiness check: {error}",
+                details={"sandbox": name},
+            ) from error
         return sandbox
+
+    @staticmethod
+    def _destroy_quietly(sandbox: DockerSandbox) -> None:
+        try:
+            sandbox.destroy()
+        except SandboxError as error:
+            # Reported, not raised: the readiness failure is the root cause. The run's final
+            # label-based sweep (or `agentenv cleanup`) removes the container later.
+            logger.warning(
+                "could not remove sandbox %s after a failed start: %s", sandbox.name, error
+            )
 
     def _verify_running(self, container: Container, sandbox: DockerSandbox) -> None:
         container.reload()
@@ -415,7 +496,7 @@ class DockerSandboxBackend:
                 "the image must provide `sleep`",
                 details={"container_logs": logs[-2000:]},
             )
-        probe = sandbox.execute(CommandRequest(argv=("true",), timeout_seconds=30))
+        probe = self._probe(sandbox)
         if probe.exit_code != 0:
             raise SandboxStartError(
                 f"sandbox {sandbox.name} cannot run commands; the image must provide GNU "
@@ -423,8 +504,30 @@ class DockerSandboxBackend:
                 details={"probe_output": (probe.stdout + probe.stderr)[-2000:]},
             )
 
-    def remove_orphaned_sandboxes(self, run_id: str | None = None) -> list[str]:
-        """Remove every AgentEnvForge container (optionally only those of ``run_id``)."""
+    @staticmethod
+    def _probe(sandbox: DockerSandbox) -> CommandExecution:
+        # `true` is idempotent, so a transport error on the first command after start is
+        # retried a few times; a non-zero exit is deterministic and is never retried.
+        for attempt in range(1, _PROBE_ATTEMPTS + 1):
+            try:
+                return sandbox.execute(CommandRequest(argv=("true",), timeout_seconds=30))
+            except SandboxError:
+                if attempt == _PROBE_ATTEMPTS:
+                    raise
+                logger.warning("readiness probe of %s failed (attempt %d)", sandbox.name, attempt)
+                time.sleep(0.5 * attempt)
+        raise AssertionError("unreachable")  # pragma: no cover
+
+    def remove_orphaned_sandboxes(
+        self, run_id: str | None = None, *, include_live: bool = False
+    ) -> list[str]:
+        """Remove sandboxes left behind by processes that no longer exist.
+
+        With ``run_id``, every sandbox of that run is removed (an explicit request). Without
+        it, only sandboxes whose owner process on this host is gone are removed, so a run in
+        another terminal is never disturbed; ``include_live`` removes all AgentEnvForge
+        sandboxes regardless of owner (also those of other hosts or of older versions).
+        """
         # Requiring the run-id label selects only containers AgentEnvForge created itself.
         labels = [
             f"{LABEL_MANAGED}=true",
@@ -432,10 +535,12 @@ class DockerSandboxBackend:
         ]
         try:
             containers = self._client.containers.list(all=True, filters={"label": labels})
-        except docker.errors.DockerException as error:
+        except _DOCKER_ERRORS as error:
             raise SandboxError(f"cannot list containers: {error}") from error
         removed = []
         for container in containers:
+            if run_id is None and not include_live and not _owner_is_gone(container):
+                continue
             DockerSandbox(self._client, container, str(container.name)).destroy()
             removed.append(str(container.name))
         return removed
@@ -446,7 +551,7 @@ class DockerSandboxBackend:
             self._client.containers.get(name).remove(force=True)
         except docker.errors.NotFound:
             pass
-        except docker.errors.DockerException as error:
+        except _DOCKER_ERRORS as error:
             logger.warning("could not remove partially created sandbox %s: %s", name, error)
 
 
@@ -474,3 +579,9 @@ def _render_build_log(entries: Iterator[Any] | Any) -> str:
                 text = json.dumps(entry)
             lines.append(str(text))
     return "".join(lines)[-_MAX_BUILD_LOG_CHARS:]
+
+
+def _owner_is_gone(container: Container) -> bool:
+    """True when the container's owning process ran on this host and no longer exists."""
+    owner = Owner.parse((container.labels or {}).get(LABEL_OWNER))
+    return owner is not None and owner.is_local() and not process_exists(owner.pid)

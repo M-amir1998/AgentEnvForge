@@ -1,0 +1,143 @@
+{
+  "run_id": "run_01m553wejq6s9n0t83rxv6nbyz",
+  "task_id": "lru-cache-recency",
+  "status": "completed",
+  "passed": true,
+  "score": 1.0,
+  "failure": null,
+  "agent": {
+    "adapter": "claude-code:claude-sonnet-5-5",
+    "outcome": "completed",
+    "exit_code": null,
+    "summary": "I fixed two bugs in `cache/lru.py`, and the tests pass (2 passed).\n\n- **`get`:** a hit now moves the key to the most-recently-used position. Before, reading an entry didn't count as using it, so recently read entries were evicted first.\n- **`put`:** updating an existing key no longer evicts another entry. It now refreshes that key's position. Eviction only happens when a new key is added to a full cache.\n\nThe public API is unchanged.",
+    "duration_ms": 10360,
+    "command_count": 1,
+    "metadata": {
+      "model": "claude-sonnet-5-5",
+      "models_used": "claude-sonnet-5-5",
+      "stop_reason": "success",
+      "turns": 4,
+      "tool_calls": 3,
+      "tool_errors": 0,
+      "tools_used": "{\"read_file\": 1, \"replace_in_file\": 1, \"run\": 1}",
+      "prompt_tokens": 7154,
+      "completion_tokens": 703,
+      "cache_read_tokens": 5498,
+      "cache_write_tokens": 1650,
+      "cost_usd_list_price": 0.014191800000000001,
+      "api_seconds": 7.9,
+      "effort": "default",
+      "seed": null
+    }
+  },
+  "grade": {
+    "grader": "composite",
+    "grader_type": "composite",
+    "passed": true,
+    "score": 1.0,
+    "tests_passed": 11,
+    "tests_failed": 0,
+    "tests_errored": 0,
+    "tests_skipped": 0,
+    "duration_ms": 1359,
+    "summary": "2/2 graders passed",
+    "details": {},
+    "components": [
+      {
+        "grader": "hidden-tests",
+        "grader_type": "pytest",
+        "passed": true,
+        "score": 1.0,
+        "tests_passed": 9,
+        "tests_failed": 0,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 640,
+        "summary": "9/9 tests passed",
+        "details": {
+          "exit_code": 0
+        },
+        "components": []
+      },
+      {
+        "grader": "visible-tests",
+        "grader_type": "pytest",
+        "passed": true,
+        "score": 1.0,
+        "tests_passed": 2,
+        "tests_failed": 0,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 719,
+        "summary": "2/2 tests passed",
+        "details": {
+          "exit_code": 0
+        },
+        "components": []
+      }
+    ]
+  },
+  "stage_timings": [
+    {
+      "status": "created",
+      "started_at": "2026-10-17T14:22:34.585468Z",
+      "duration_ms": 1
+    },
+    {
+      "status": "validating",
+      "started_at": "2026-10-17T14:22:34.586515Z",
+      "duration_ms": 25
+    },
+    {
+      "status": "preparing_source",
+      "started_at": "2026-10-17T14:22:34.611817Z",
+      "duration_ms": 7
+    },
+    {
+      "status": "building_sandbox",
+      "started_at": "2026-10-17T14:22:34.618672Z",
+      "duration_ms": 26
+    },
+    {
+      "status": "starting_sandbox",
+      "started_at": "2026-10-17T14:22:34.644761Z",
+      "duration_ms": 251
+    },
+    {
+      "status": "running_agent",
+      "started_at": "2026-10-17T14:22:34.895360Z",
+      "duration_ms": 10360
+    },
+    {
+      "status": "capturing_solution",
+      "started_at": "2026-10-17T14:22:45.255268Z",
+      "duration_ms": 139
+    },
+    {
+      "status": "running_grader",
+      "started_at": "2026-10-17T14:22:45.394086Z",
+      "duration_ms": 1643
+    },
+    {
+      "status": "collecting_artifacts",
+      "started_at": "2026-10-17T14:22:47.036890Z",
+      "duration_ms": 3
+    },
+    {
+      "status": "cleaning_up",
+      "started_at": "2026-10-17T14:22:47.039649Z",
+      "duration_ms": 96
+    }
+  ],
+  "cleanup": {
+    "succeeded": true,
+    "sandboxes_removed": [
+      "agentenv-run_01m553wejq6s9n0t83rxv6nbyz-agent",
+      "agentenv-run_01m553wejq6s9n0t83rxv6nbyz-grader"
+    ],
+    "errors": []
+  },
+  "created_at": "2026-10-17T14:22:34.585468Z",
+  "finished_at": "2026-10-17T14:22:47.135532Z",
+  "duration_ms": 12550
+}

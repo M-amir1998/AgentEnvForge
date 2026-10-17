@@ -13,7 +13,7 @@ from ollama_agent import OllamaAgent, extract_tool_calls
 
 from agentenvforge.agents.base import AgentContext, AgentTask
 from agentenvforge.agents.spec import AgentEnvironment, resolve_agent
-from agentenvforge.domain.failures import AgentError
+from agentenvforge.domain.failures import AgentTimeoutError, AgentUnavailableError
 from agentenvforge.domain.results import AgentOutcome
 from agentenvforge.sandbox.session import SandboxSession
 from agentenvforge.workspace.archive import Ownership
@@ -69,11 +69,13 @@ class ScriptedModel:
     def __init__(self, replies: list[dict[str, Any]]) -> None:
         self.replies: Iterator[dict[str, Any]] = iter(replies)
         self.requests: list[list[dict[str, Any]]] = []
+        self.seeds: list[int | None] = []
 
     def __call__(
-        self, messages: list[dict[str, Any]], timeout: float, stats: Any
+        self, messages: list[dict[str, Any]], timeout: float, stats: Any, seed: int | None
     ) -> dict[str, Any]:
         self.requests.append(list(messages))
+        self.seeds.append(seed)
         stats.prompt_tokens += 10
         return next(self.replies)
 
@@ -95,7 +97,9 @@ def workspace_sandbox(tmp_path: Path) -> FakeSandbox:
     return FakeSandbox(root, "box", handler)
 
 
-def make_context(sandbox: FakeSandbox, artifacts: dict[str, bytes]) -> AgentContext:
+def make_context(
+    sandbox: FakeSandbox, artifacts: dict[str, bytes], seed: int | None = None
+) -> AgentContext:
     session = SandboxSession(
         sandbox,
         workspace=PurePosixPath("/workspace"),
@@ -109,6 +113,7 @@ def make_context(sandbox: FakeSandbox, artifacts: dict[str, bytes]) -> AgentCont
         session=session,
         time_budget_seconds=60,
         save_artifact=artifacts.__setitem__,
+        seed=seed,
     )
 
 
@@ -191,9 +196,35 @@ def test_step_limit_ends_the_run(
     assert result.summary == "stopped: reached max_steps=3"
 
 
-def test_unreachable_ollama_is_an_agent_error(workspace_sandbox: FakeSandbox) -> None:
+def test_unreachable_ollama_is_unavailable_not_an_agent_failure(
+    workspace_sandbox: FakeSandbox,
+) -> None:
     agent = OllamaAgent(model="fake", base_url="http://127.0.0.1:9")
-    with pytest.raises(AgentError, match="cannot reach Ollama"):
+    with pytest.raises(AgentUnavailableError, match="cannot reach Ollama"):
+        agent.run(make_context(workspace_sandbox, {}))
+
+
+def test_experiment_seed_reaches_the_model(
+    workspace_sandbox: FakeSandbox, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    model = ScriptedModel([tool_message("finish", summary="done")])
+    agent = OllamaAgent(model="fake", temperature=0.2, seed=42)
+    monkeypatch.setattr(agent, "_chat", model)
+    result = agent.run(make_context(workspace_sandbox, {}, seed=7))
+    assert model.seeds == [7]
+    assert result.metadata["seed"] == 7
+
+
+def test_model_call_that_exhausts_the_budget_is_an_agent_timeout(
+    workspace_sandbox: FakeSandbox, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    agent = OllamaAgent(model="fake")
+
+    def slow_server(path: str, payload: object, timeout: float) -> dict[str, Any]:
+        raise TimeoutError("timed out")
+
+    monkeypatch.setattr(agent, "_request", slow_server)
+    with pytest.raises(AgentTimeoutError, match="remaining time budget"):
         agent.run(make_context(workspace_sandbox, {}))
 
 

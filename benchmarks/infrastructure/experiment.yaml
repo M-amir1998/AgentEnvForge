@@ -1,0 +1,31 @@
+# Infrastructure benchmark: how does batch execution scale with local concurrency?
+#
+# Only deterministic, near-instant agents (no AI): the oracle applies the reference fix and
+# must pass; noop changes nothing and must fail. Run time is therefore almost entirely
+# AgentEnvForge + Docker overhead (sandbox start, workspace copy, grading sandbox, cleanup),
+# which is what this benchmark measures.
+#
+#   python benchmarks/run_scaling.py          # workers 1, 2, 4; 3 interleaved trials each
+#   agentenv experiment run benchmarks/infrastructure/experiment.yaml --workers 4
+schema_version: "1"
+id: infrastructure
+name: Batch execution overhead and scaling
+description: >
+  Three tasks, a reference (oracle) and a baseline (noop) agent, five repetitions:
+  30 runs dominated by sandbox and grading overhead.
+tags: [benchmark, infrastructure]
+tasks:
+  - ../../examples/off-by-one/task.yaml
+  - ../../examples/lru-cache/task.yaml
+  - ../../examples/basic/task.yaml
+agents:
+  - id: oracle
+    role: reference
+    spec: ../../examples/agents/oracle/oracle.yaml
+  - id: noop
+    role: baseline
+    agent: {type: noop}
+repetitions: 5
+execution:
+  workers: 1
+  base_seed: 0

@@ -60,3 +60,20 @@ class RunManifest(BaseModel):
     grader_assets_hash: str | None = None
     overrides: dict[str, int | float | str | bool] = {}
     """Run-time deviations from the task definition (e.g. a longer agent time budget)."""
+    seed: int | None = None
+    """Seed offered to the agent (``None``: the agent used its own configuration)."""
+    experiment: ExperimentLink | None = None
+    """Set when the run belongs to an experiment; makes the run self-describing on its own."""
+    agent_spec: dict[str, object] | None = None
+    """The validated agent specification, when known (secret *names* only, never values)."""
+
+
+class ExperimentLink(BaseModel):
+    """Where a run sits in an experiment's matrix."""
+
+    model_config = ConfigDict(frozen=True)
+
+    experiment_id: str
+    position: int
+    agent_id: str
+    repetition: int

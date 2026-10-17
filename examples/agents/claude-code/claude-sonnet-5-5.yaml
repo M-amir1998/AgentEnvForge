@@ -1,0 +1,9 @@
+# Claude Sonnet 5.5 driven by Claude Code (`claude -p`), acting only through the sandbox's MCP tools.
+# Uses the CLI's own login (claude.ai or ANTHROPIC_API_KEY); every run consumes model usage.
+schema_version: "1"
+type: python
+name: claude-code-sonnet-5-5
+adapter: claude_code_agent:build
+path: .
+options:
+  model: claude-sonnet-5-5

@@ -29,7 +29,12 @@ from dataclasses import dataclass, field
 from typing import Any
 
 from agentenvforge.agents.base import AgentContext
-from agentenvforge.domain.failures import AgentError, SandboxPathNotFoundError
+from agentenvforge.domain.failures import (
+    AgentError,
+    AgentTimeoutError,
+    AgentUnavailableError,
+    SandboxPathNotFoundError,
+)
 from agentenvforge.domain.results import AgentOutcome, AgentResult
 
 SYSTEM_PROMPT = """\
@@ -195,6 +200,9 @@ class _Stats:
     prompt_tokens: int = 0
     completion_tokens: int = 0
     llm_seconds: float = 0.0
+    """Wall-clock time spent waiting for the model (includes any queueing in Ollama)."""
+    generation_seconds: float = 0.0
+    """Ollama's own measurement of token generation time (``eval_duration``)."""
     tools_used: dict[str, int] = field(default_factory=dict)
 
 
@@ -227,37 +235,98 @@ class OllamaAgent:
 
     # ------------------------------------------------------------------ model
 
-    def _chat(
-        self, messages: list[dict[str, Any]], timeout: float, stats: _Stats
-    ) -> dict[str, Any]:
-        body = json.dumps(
-            {
-                "model": self.model,
-                "messages": messages,
-                "tools": TOOLS,
-                "stream": False,
-                "think": False,
-                "options": self.options,
-                "keep_alive": "15m",
-            }
-        ).encode("utf-8")
+    def _request(self, path: str, payload: dict[str, Any] | None, timeout: float) -> dict[str, Any]:
+        """Call the Ollama HTTP API; timeouts raise ``TimeoutError``, other failures AgentError."""
         request = urllib.request.Request(  # noqa: S310 - URL comes from the trusted agent spec
-            f"{self.base_url}/api/chat", data=body, headers={"Content-Type": "application/json"}
+            f"{self.base_url}{path}",
+            data=None if payload is None else json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"},
         )
-        started = time.monotonic()
         try:
             with urllib.request.urlopen(request, timeout=timeout) as response:  # noqa: S310
                 reply: dict[str, Any] = json.load(response)
         except urllib.error.HTTPError as error:
             detail = error.read().decode("utf-8", errors="replace")[:300]
-            raise AgentError(f"Ollama rejected the request ({error.code}): {detail}") from error
-        except (urllib.error.URLError, TimeoutError, ConnectionError) as error:
+            # 5xx/429: the model server is broken or overloaded, which says nothing about the
+            # agent; 4xx: the request itself is wrong (an agent error).
+            unavailable = error.code >= 500 or error.code == 429
+            failure = AgentUnavailableError if unavailable else AgentError
+            raise failure(f"Ollama rejected the request ({error.code}): {detail}") from error
+        except urllib.error.URLError as error:
+            if isinstance(error.reason, TimeoutError):
+                raise error.reason from error
+            raise AgentUnavailableError(
+                f"cannot reach Ollama at {self.base_url} ({error.reason}); is Ollama running? "
+                "(install it from https://ollama.com, then start it)"
+            ) from error
+        except ConnectionError as error:
+            raise AgentUnavailableError(
+                f"connection to Ollama at {self.base_url} failed: {error}"
+            ) from error
+        return reply
+
+    def preflight(self) -> dict[str, str | int | float | bool | None]:
+        """Check that Ollama runs and the model is installed and loadable; return provenance."""
+        try:
+            version = str(self._request("/api/version", None, timeout=10).get("version"))
+            installed = self._request("/api/tags", None, timeout=10).get("models") or []
+        except TimeoutError as error:
+            raise AgentError(f"Ollama at {self.base_url} did not answer within 10s") from error
+        entry = next((m for m in installed if self.model in (m.get("name"), m.get("model"))), None)
+        if entry is None:
             raise AgentError(
-                f"cannot reach Ollama at {self.base_url} ({error}); is `ollama serve` running?"
+                f"model {self.model!r} is not installed in Ollama {version}; "
+                f"run `ollama pull {self.model}`"
+            )
+        try:
+            shown = self._request("/api/show", {"model": self.model}, timeout=60)
+        except (AgentError, TimeoutError) as error:
+            raise AgentError(
+                f"model {self.model!r} is listed by Ollama but cannot be loaded ({error}); "
+                f"re-download it with `ollama pull {self.model}`"
+            ) from error
+        details = shown.get("details") or {}
+        return {
+            "ollama_version": version,
+            "model": self.model,
+            "model_digest": entry.get("digest"),
+            "model_size_bytes": entry.get("size"),
+            "parameter_size": details.get("parameter_size"),
+            "quantization": details.get("quantization_level"),
+            "family": details.get("family"),
+            "temperature": self.options["temperature"],
+            "configured_seed": self.options["seed"],
+            "num_ctx": self.options["num_ctx"],
+            "max_steps": self.max_steps,
+        }
+
+    def _chat(
+        self, messages: list[dict[str, Any]], timeout: float, stats: _Stats, seed: int | None
+    ) -> dict[str, Any]:
+        options = dict(self.options) if seed is None else {**self.options, "seed": seed}
+        payload = {
+            "model": self.model,
+            "messages": messages,
+            "tools": TOOLS,
+            "stream": False,
+            "think": False,
+            "options": options,
+            "keep_alive": "15m",
+        }
+        started = time.monotonic()
+        try:
+            reply = self._request("/api/chat", payload, timeout=timeout)
+        except TimeoutError as error:
+            # The request was given exactly the remaining budget, so a timeout here means the
+            # agent ran out of time (not that Ollama is unreachable).
+            raise AgentTimeoutError(
+                f"model call exceeded the remaining time budget ({timeout:.0f}s)",
+                details={"model": self.model},
             ) from error
         stats.llm_seconds += time.monotonic() - started
         stats.prompt_tokens += int(reply.get("prompt_eval_count") or 0)
         stats.completion_tokens += int(reply.get("eval_count") or 0)
+        stats.generation_seconds += int(reply.get("eval_duration") or 0) / 1e9
         message = reply.get("message")
         if not isinstance(message, dict):
             raise AgentError(f"unexpected Ollama response: {str(reply)[:300]}")
@@ -338,7 +407,9 @@ class OllamaAgent:
                     summary = "stopped: time budget nearly exhausted"
                     break
                 stats.steps += 1
-                message = self._chat(messages, timeout=remaining or 600, stats=stats)
+                message = self._chat(
+                    messages, timeout=remaining or 600, stats=stats, seed=context.seed
+                )
                 messages.append(
                     {
                         key: message[key]
@@ -347,7 +418,9 @@ class OllamaAgent:
                     }
                 )
                 calls = extract_tool_calls(message)
-                if not calls:
+                if calls:
+                    nudges = 0  # the limit is on *consecutive* replies without a tool call
+                else:
                     stats.invalid_replies += 1
                     nudges += 1
                     if nudges > _MAX_NUDGES:
@@ -387,6 +460,14 @@ class OllamaAgent:
                 "prompt_tokens": stats.prompt_tokens,
                 "completion_tokens": stats.completion_tokens,
                 "llm_seconds": round(stats.llm_seconds, 1),
+                "generation_seconds": round(stats.generation_seconds, 1),
+                "generation_tokens_per_second": (
+                    round(stats.completion_tokens / stats.generation_seconds, 2)
+                    if stats.generation_seconds
+                    else None
+                ),
+                "seed": context.seed if context.seed is not None else self.options["seed"],
+                "temperature": self.options["temperature"],
                 "tools_used": json.dumps(stats.tools_used, sort_keys=True),
             },
         )

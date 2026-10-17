@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 import threading
 import time
 from datetime import UTC, datetime
@@ -18,6 +19,7 @@ from agentenvforge.domain.results import RunResult
 from agentenvforge.domain.status import RunStatus
 from agentenvforge.persistence.repository import NewRun
 from agentenvforge.persistence.sqlite import SqliteRunRepository
+from agentenvforge.persistence.sqlite_database import MIGRATIONS, SqliteDatabase
 from agentenvforge.telemetry.redaction import REDACTED, Redactor
 from agentenvforge.timeouts import CallTimeoutError, call_with_timeout
 
@@ -164,7 +166,37 @@ def test_repository_filters_and_orders_runs(tmp_path: Path) -> None:
 def test_migrations_are_applied_once(tmp_path: Path) -> None:
     SqliteRunRepository(tmp_path / "db.sqlite").close()
     reopened = SqliteRunRepository(tmp_path / "db.sqlite")
-    assert reopened.schema_version == 1
+    assert reopened.schema_version == len(MIGRATIONS)
+
+
+def test_existing_version_1_database_is_upgraded_without_losing_runs(tmp_path: Path) -> None:
+    """A database created before experiments existed keeps its runs after migration 2."""
+    path = tmp_path / "v1.sqlite"
+    now = datetime.now(UTC).isoformat()
+    connection = sqlite3.connect(path)
+    connection.executescript(MIGRATIONS[0])
+    connection.execute(
+        "CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, applied_at TEXT)"
+    )
+    connection.execute("INSERT INTO schema_migrations VALUES (1, datetime('now'))")
+    connection.execute(
+        "INSERT INTO runs (run_id, task_id, task_path, agent, status, created_at, updated_at, "
+        "manifest_json) VALUES ('run_old', 't', 't.yaml', 'noop', 'completed', ?, ?, ?)",
+        (now, now, _manifest().model_dump_json()),
+    )
+    connection.commit()
+    connection.close()
+
+    database = SqliteDatabase(path)  # migrates 1 -> 2
+    repository = SqliteRunRepository(database)
+    assert database.schema_version == len(MIGRATIONS)
+    tables = {
+        row["name"] for row in database.query("SELECT name FROM sqlite_master WHERE type='table'")
+    }
+    assert {"runs", "events", "artifacts", "experiments", "experiment_runs"} <= tables
+    assert repository.get_run("run_old") is not None
+    database.close()
+    assert SqliteDatabase(path).schema_version == len(MIGRATIONS)  # idempotent on reopen
 
 
 def test_concurrent_event_writes_are_serialised(tmp_path: Path) -> None:

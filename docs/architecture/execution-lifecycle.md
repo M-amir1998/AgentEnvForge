@@ -36,9 +36,10 @@ message, error type, details). `terminal_status_for(reason)` picks the terminal 
 | `SandboxBuildError` / `SandboxBuildTimeoutError` | `sandbox_build(_timeout)` | `failed_build` |
 | `SandboxStartError`, `SetupCommandError`, other `SandboxError` | ... | `failed_sandbox` |
 | `AgentError` (adapter crashed or misbehaved) | `agent_error` | `failed_agent` |
+| `AgentUnavailableError` (the agent's service, e.g. a model server, is unreachable or failing) | `agent_unavailable` | `failed_agent` |
 | `AgentTimeoutError` | `agent_timeout` | `timed_out` |
 | `GraderError` / `GraderTimeoutError` | `grader_error` / `grader_timeout` | `failed_grader` / `timed_out` |
-| `KeyboardInterrupt`, SIGTERM (`RunCancelledError`) | `cancelled` | `cancelled` |
+| `KeyboardInterrupt`, SIGTERM, a cancelled token (`RunCancelledError`) | `cancelled` | `cancelled` |
 | anything else | `internal` (traceback logged) | `internal_error` |
 
 Unexpected exceptions are logged with their traceback. Classified errors chain their
@@ -74,6 +75,22 @@ run the agent at all (exceptions, misuse of the session).
   labelled `io.agentenvforge.managed=true` and `io.agentenvforge.run-id=<id>`, and
   `agentenv cleanup` removes them. The run row remains in a non-terminal status, which
   identifies the interrupted execution.
+
+## Cancellation
+
+A run can be cancelled in two ways:
+
+- **Single runs** (`agentenv run`): Ctrl+C raises `KeyboardInterrupt` and SIGTERM raises
+  `RunCancelledError` in the main thread, which runs the orchestrator.
+- **Runs inside an experiment** receive a shared `CancellationToken` in their `RunRequest`.
+  The orchestrator checks it at every stage boundary (except the one before
+  `COLLECTING_ARTIFACTS`, so a graded run is kept), while waiting for the agent and the
+  grader, and before every command a session runs. Any error raised because the token was
+  set is classified as `cancelled`, not as an agent or grader failure.
+
+Either way the run passes through `CLEANING_UP` and ends `CANCELLED`. Starting a sandbox
+cannot be interrupted, but it is bounded by `sandbox_start_timeout_seconds`. A sandbox that
+finishes starting after the run gave up on it is destroyed immediately.
 
 ## Retry, resume, reproduce
 

@@ -41,6 +41,10 @@ class EventSink(Protocol):
         ...
 
 
+class RecorderSealedError(RuntimeError):
+    """A write was attempted after the run was finalized (e.g. by an abandoned thread)."""
+
+
 class RunRecorder:
     """Writes events, artifacts and the command log of one run (thread-safe)."""
 
@@ -65,6 +69,20 @@ class RunRecorder:
         self._lock = threading.Lock()
         self._sequence = 0
         self._command_log: list[str] = []
+        self._sealed = False
+
+    def seal(self) -> None:
+        """Reject every later write: the run's record is complete."""
+        with self._lock:
+            self._sealed = True
+
+    def redact(self, text: str) -> str:
+        """Apply the run's secret redaction to ``text``."""
+        return self._redactor.redact_text(text)
+
+    def _ensure_open(self) -> None:
+        if self._sealed:
+            raise RecorderSealedError(f"run {self.run_id} is finalized; late write rejected")
 
     def emit(
         self, event_type: EventType, *, duration_ms: int | None = None, **data: JSONScalar
@@ -75,6 +93,7 @@ class RunRecorder:
             for key, value in data.items()
         }
         with self._lock:
+            self._ensure_open()
             self._sequence += 1
             event = ExecutionEvent(
                 event_id=new_event_id(),
@@ -90,11 +109,17 @@ class RunRecorder:
             self._repository.append_event(event)
         logger.debug("event %s %s", event.event_type.value, json.dumps(event.data, default=str))
         for sink in self._sinks:
-            sink.handle(event)
+            try:
+                sink.handle(event)
+            except Exception:  # presentation must never break a run
+                logger.exception(
+                    "event sink %s failed on %s", type(sink).__name__, event.event_type
+                )
         return event
 
     def save_artifact(self, name: str, content: bytes) -> ArtifactRecord:
         """Redact, store and record an artifact."""
+        self._ensure_open()
         record = self._artifacts.put(self.run_id, name, self._redactor.redact_bytes(content))
         self._repository.add_artifact(record)
         self.emit(EventType.ARTIFACT_STORED, name=record.name, size_bytes=record.size_bytes)

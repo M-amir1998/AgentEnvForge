@@ -1,0 +1,10 @@
+diff --git a/stats/window.py b/stats/window.py
+--- a/stats/window.py
++++ b/stats/window.py
+@@ -14,5 +14,5 @@
+     averages = []
+     for start in range(len(values) - window):
+         chunk = values[start : start + window]
+-        averages.append(sum(chunk) / window)
++        averages.append(sum(chunk) / window if chunk else 0)
+     return averages

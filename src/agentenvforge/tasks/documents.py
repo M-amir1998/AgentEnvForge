@@ -83,6 +83,15 @@ def read_yaml_mapping(path: Path) -> dict[str, Any]:
     return {str(key): value for key, value in document.items()}
 
 
+def _item_failed(location: tuple[int | str, ...], details: list[Any]) -> bool:
+    """True if another error lies *inside* ``location`` (an item of that sequence)."""
+    size = len(location)
+    return any(
+        len(other["loc"]) > size and tuple(other["loc"][:size]) == tuple(location)
+        for other in details
+    )
+
+
 def _format_location(location: tuple[int | str, ...]) -> str:
     parts: list[str] = []
     for index, element in enumerate(location):
@@ -111,7 +120,12 @@ def _format_received(value: object) -> str:
 def issues_from_pydantic(error: ValidationError) -> list[ValidationIssue]:
     """Convert a pydantic error into user-facing issues, one per problem."""
     issues = []
-    for detail in error.errors(include_url=False):
+    details = error.errors(include_url=False)
+    for detail in details:
+        if detail["type"] == "too_short" and _item_failed(detail["loc"], details):
+            # An invalid item is dropped before the length check, so a one-item list also
+            # reports "should have at least 1 item": noise next to the item's own error.
+            continue
         reason = detail["msg"].removeprefix("Value error, ")
         received = None if detail["type"] == "missing" else _format_received(detail["input"])
         location = tuple(detail["loc"])

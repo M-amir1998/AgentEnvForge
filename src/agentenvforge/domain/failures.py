@@ -30,6 +30,7 @@ class FailureReason(StrEnum):
     SANDBOX_START = "sandbox_start"
     SETUP_COMMAND = "setup_command"
     AGENT_ERROR = "agent_error"
+    AGENT_UNAVAILABLE = "agent_unavailable"
     AGENT_TIMEOUT = "agent_timeout"
     GRADER_ERROR = "grader_error"
     GRADER_TIMEOUT = "grader_timeout"
@@ -48,6 +49,7 @@ _TERMINAL_STATUS_BY_REASON: dict[FailureReason, RunStatus] = {
     FailureReason.SETUP_COMMAND: RunStatus.FAILED_SANDBOX,
     FailureReason.SANDBOX_INFRASTRUCTURE: RunStatus.FAILED_SANDBOX,
     FailureReason.AGENT_ERROR: RunStatus.FAILED_AGENT,
+    FailureReason.AGENT_UNAVAILABLE: RunStatus.FAILED_AGENT,
     FailureReason.AGENT_TIMEOUT: RunStatus.TIMED_OUT,
     FailureReason.GRADER_ERROR: RunStatus.FAILED_GRADER,
     FailureReason.GRADER_TIMEOUT: RunStatus.TIMED_OUT,
@@ -157,6 +159,16 @@ class AgentError(AgentEnvForgeError):
     """The agent adapter itself failed (crashed, misconfigured, could not start)."""
 
     reason = FailureReason.AGENT_ERROR
+
+
+class AgentUnavailableError(AgentError):
+    """A service the agent depends on (e.g. a model server) could not be reached.
+
+    Distinct from :class:`AgentError` because it says nothing about the agent's ability:
+    experiment statistics exclude these runs instead of counting them as agent failures.
+    """
+
+    reason = FailureReason.AGENT_UNAVAILABLE
 
 
 class AgentTimeoutError(AgentEnvForgeError):

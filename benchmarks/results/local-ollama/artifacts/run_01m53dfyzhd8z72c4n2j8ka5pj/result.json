@@ -1,0 +1,140 @@
+{
+  "run_id": "run_01m53dfyzhd8z72c4n2j8ka5pj",
+  "task_id": "moving-average-off-by-one",
+  "status": "completed",
+  "passed": false,
+  "score": 0.214285,
+  "failure": null,
+  "agent": {
+    "adapter": "ollama:qwen2.5-coder:1.5b",
+    "outcome": "failed",
+    "exit_code": null,
+    "summary": "stopped: reached max_steps=20",
+    "duration_ms": 253515,
+    "command_count": 10,
+    "metadata": {
+      "model": "qwen2.5-coder:1.5b",
+      "steps": 20,
+      "tool_calls": 10,
+      "invalid_replies": 10,
+      "prompt_tokens": 51161,
+      "completion_tokens": 1829,
+      "llm_seconds": 245.5,
+      "generation_seconds": 147.9,
+      "generation_tokens_per_second": 12.37,
+      "seed": 0,
+      "temperature": 0.2,
+      "tools_used": "{\"run\": 10}"
+    }
+  },
+  "grade": {
+    "grader": "composite",
+    "grader_type": "composite",
+    "passed": false,
+    "score": 0.214285,
+    "tests_passed": 3,
+    "tests_failed": 5,
+    "tests_errored": 0,
+    "tests_skipped": 0,
+    "duration_ms": 1328,
+    "summary": "0/2 graders passed",
+    "details": {},
+    "components": [
+      {
+        "grader": "hidden-tests",
+        "grader_type": "pytest",
+        "passed": false,
+        "score": 0.428571,
+        "tests_passed": 3,
+        "tests_failed": 4,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 703,
+        "summary": "3/7 tests passed",
+        "details": {
+          "exit_code": 1
+        },
+        "components": []
+      },
+      {
+        "grader": "visible-tests",
+        "grader_type": "pytest",
+        "passed": false,
+        "score": 0.0,
+        "tests_passed": 0,
+        "tests_failed": 1,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 625,
+        "summary": "0/1 tests passed",
+        "details": {
+          "exit_code": 1
+        },
+        "components": []
+      }
+    ]
+  },
+  "stage_timings": [
+    {
+      "status": "created",
+      "started_at": "2026-10-16T22:32:02.292931Z",
+      "duration_ms": 1
+    },
+    {
+      "status": "validating",
+      "started_at": "2026-10-16T22:32:02.293926Z",
+      "duration_ms": 41
+    },
+    {
+      "status": "preparing_source",
+      "started_at": "2026-10-16T22:32:02.335350Z",
+      "duration_ms": 7
+    },
+    {
+      "status": "building_sandbox",
+      "started_at": "2026-10-16T22:32:02.342470Z",
+      "duration_ms": 36
+    },
+    {
+      "status": "starting_sandbox",
+      "started_at": "2026-10-16T22:32:02.378485Z",
+      "duration_ms": 294
+    },
+    {
+      "status": "running_agent",
+      "started_at": "2026-10-16T22:32:02.672628Z",
+      "duration_ms": 253526
+    },
+    {
+      "status": "capturing_solution",
+      "started_at": "2026-10-16T22:36:16.199109Z",
+      "duration_ms": 113
+    },
+    {
+      "status": "running_grader",
+      "started_at": "2026-10-16T22:36:16.312391Z",
+      "duration_ms": 1642
+    },
+    {
+      "status": "collecting_artifacts",
+      "started_at": "2026-10-16T22:36:17.954000Z",
+      "duration_ms": 3
+    },
+    {
+      "status": "cleaning_up",
+      "started_at": "2026-10-16T22:36:17.957173Z",
+      "duration_ms": 88
+    }
+  ],
+  "cleanup": {
+    "succeeded": true,
+    "sandboxes_removed": [
+      "agentenv-run_01m53dfyzhd8z72c4n2j8ka5pj-agent",
+      "agentenv-run_01m53dfyzhd8z72c4n2j8ka5pj-grader"
+    ],
+    "errors": []
+  },
+  "created_at": "2026-10-16T22:32:02.292931Z",
+  "finished_at": "2026-10-16T22:36:18.044849Z",
+  "duration_ms": 255752
+}

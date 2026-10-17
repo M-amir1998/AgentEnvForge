@@ -1,0 +1,12 @@
+diff --git a/stats/window.py b/stats/window.py
+--- a/stats/window.py
++++ b/stats/window.py
+@@ -12,7 +12,7 @@
+     if window < 1:
+         raise ValueError("window must be at least 1")
+     averages = []
+-    for start in range(len(values) - window):
++    for start in range(len(values) - window + 1):
+         chunk = values[start : start + window]
+         averages.append(sum(chunk) / window)
+     return averages

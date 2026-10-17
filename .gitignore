@@ -18,6 +18,8 @@ htmlcov/
 
 # AgentEnvForge local state (runs, artifacts, database)
 .agentenvforge/
+# Experiment results written by the tutorial and README examples (benchmarks/results/ is committed)
+/results/
 
 # Editors / OS
 .idea/

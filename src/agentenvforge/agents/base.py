@@ -18,6 +18,7 @@ from pathlib import PurePosixPath
 from typing import Protocol, runtime_checkable
 
 from agentenvforge.domain.results import AgentResult
+from agentenvforge.domain.types import Metadata
 from agentenvforge.sandbox.session import SandboxSession
 
 type ArtifactWriter = Callable[[str, bytes], None]
@@ -43,6 +44,10 @@ class AgentContext:
     session: SandboxSession
     time_budget_seconds: float
     save_artifact: ArtifactWriter
+    seed: int | None = None
+    """Seed for agents that sample stochastically (e.g. LLM decoding). Experiments vary it
+    between repetitions so repeated attempts are independent samples; ``None`` means the
+    agent keeps its own configuration."""
 
 
 @runtime_checkable
@@ -62,4 +67,19 @@ class AgentAdapter(Protocol):
 
     def run(self, context: AgentContext) -> AgentResult:
         """Act on ``context.session`` until done, then report the outcome."""
+        ...
+
+
+@runtime_checkable
+class SupportsPreflight(Protocol):
+    """Optional extension: adapters that depend on an external service can check it early.
+
+    ``preflight`` is called once per agent before an experiment (or a single run) starts, so
+    a missing model or an unreachable server fails fast with an actionable message instead
+    of failing every run. It raises :class:`~agentenvforge.domain.failures.AgentError` when
+    the agent cannot work, and returns provenance worth recording (versions, model digests).
+    """
+
+    def preflight(self) -> Metadata:
+        """Check availability; return provenance metadata."""
         ...

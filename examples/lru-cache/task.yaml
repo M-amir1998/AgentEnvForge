@@ -1,0 +1,51 @@
+# A medium task: two related bugs in one class. The visible test exposes only the first;
+# the second (what happens when an existing key is written while the cache is full) is
+# caught by the hidden tests, which check only behaviour documented in the docstrings.
+#
+# Difficulty ladder used by the benchmarks:
+#   examples/off-by-one  easy    one bug, exposed directly by the visible test
+#   examples/lru-cache   medium  two bugs, one exposed only by hidden tests
+#   examples/basic       hard    three interacting bugs, two exposed only by hidden tests
+schema_version: "1"
+
+id: lru-cache-recency
+name: Make the LRU cache honour recency
+tags: [python, bug-fix, medium]
+
+instructions: |
+  Users report that `cache.LRUCache` evicts entries they have just used, so the cache's
+  hit rate is far lower than expected. Fix `cache/lru.py` so that the cache behaves as
+  its docstrings describe, without changing its public API. Run the tests with
+  `python -m pytest -q`.
+
+source:
+  type: local
+  path: project
+
+environment:
+  dockerfile: environment/Dockerfile
+  variables:
+    PYTHONDONTWRITEBYTECODE: "1"
+
+resources:
+  cpus: 1
+  memory_mb: 512
+  pids_limit: 256
+
+timeouts:
+  agent_seconds: 300
+  command_seconds: 120
+  grader_seconds: 120
+
+grading:
+  assets: grader
+  protected_paths: [tests]
+  graders:
+    - type: pytest
+      name: hidden-tests
+      paths: [/grader/tests]
+      args: [-q]
+    - type: pytest
+      name: visible-tests
+      paths: [tests]
+      args: [-q]

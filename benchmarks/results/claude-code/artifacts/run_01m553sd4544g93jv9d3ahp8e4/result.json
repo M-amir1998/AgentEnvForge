@@ -1,0 +1,143 @@
+{
+  "run_id": "run_01m553sd4544g93jv9d3ahp8e4",
+  "task_id": "moving-average-off-by-one",
+  "status": "completed",
+  "passed": true,
+  "score": 1.0,
+  "failure": null,
+  "agent": {
+    "adapter": "claude-code:claude-sonnet-5-5",
+    "outcome": "completed",
+    "exit_code": null,
+    "summary": "I fixed the off-by-one in `stats/window.py`. The loop was `range(len(values) - window)`, which stopped one window early. It is now `range(len(values) - window + 1)`, so `moving_average([1, 2, 3, 4], 2)` returns `[1.5, 2.5, 3.5]`. The function signature is unchanged, and `python -m pytest -q` passes (1 test).",
+    "duration_ms": 7297,
+    "command_count": 1,
+    "metadata": {
+      "model": "claude-sonnet-5-5",
+      "models_used": "claude-sonnet-5-5",
+      "stop_reason": "success",
+      "turns": 4,
+      "tool_calls": 3,
+      "tool_errors": 0,
+      "tools_used": "{\"read_file\": 1, \"replace_in_file\": 1, \"run\": 1}",
+      "prompt_tokens": 6256,
+      "completion_tokens": 374,
+      "cache_read_tokens": 5222,
+      "cache_write_tokens": 1028,
+      "cost_usd_list_price": 0.0083862,
+      "api_seconds": 4.9,
+      "effort": "default",
+      "seed": null
+    }
+  },
+  "grade": {
+    "grader": "composite",
+    "grader_type": "composite",
+    "passed": true,
+    "score": 1.0,
+    "tests_passed": 8,
+    "tests_failed": 0,
+    "tests_errored": 0,
+    "tests_skipped": 0,
+    "duration_ms": 1187,
+    "summary": "2/2 graders passed",
+    "details": {},
+    "components": [
+      {
+        "grader": "hidden-tests",
+        "grader_type": "pytest",
+        "passed": true,
+        "score": 1.0,
+        "tests_passed": 7,
+        "tests_failed": 0,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 578,
+        "summary": "7/7 tests passed",
+        "details": {
+          "exit_code": 0
+        },
+        "components": []
+      },
+      {
+        "grader": "visible-tests",
+        "grader_type": "pytest",
+        "passed": true,
+        "score": 1.0,
+        "tests_passed": 1,
+        "tests_failed": 0,
+        "tests_errored": 0,
+        "tests_skipped": 0,
+        "duration_ms": 609,
+        "summary": "1/1 tests passed",
+        "details": {
+          "exit_code": 0
+        },
+        "components": []
+      }
+    ]
+  },
+  "stage_timings": [
+    {
+      "status": "created",
+      "started_at": "2026-10-17T14:20:54.792915Z",
+      "duration_ms": 1
+    },
+    {
+      "status": "validating",
+      "started_at": "2026-10-17T14:20:54.794147Z",
+      "duration_ms": 28
+    },
+    {
+      "status": "preparing_source",
+      "started_at": "2026-10-17T14:20:54.821933Z",
+      "duration_ms": 6
+    },
+    {
+      "status": "building_sandbox",
+      "started_at": "2026-10-17T14:20:54.827977Z",
+      "duration_ms": 29
+    },
+    {
+      "status": "starting_sandbox",
+      "started_at": "2026-10-17T14:20:54.857309Z",
+      "duration_ms": 240
+    },
+    {
+      "status": "running_agent",
+      "started_at": "2026-10-17T14:20:55.097272Z",
+      "duration_ms": 7306
+    },
+    {
+      "status": "capturing_solution",
+      "started_at": "2026-10-17T14:21:02.402870Z",
+      "duration_ms": 152
+    },
+    {
+      "status": "running_grader",
+      "started_at": "2026-10-17T14:21:02.554767Z",
+      "duration_ms": 1463
+    },
+    {
+      "status": "collecting_artifacts",
+      "started_at": "2026-10-17T14:21:04.017295Z",
+      "duration_ms": 3
+    },
+    {
+      "status": "cleaning_up",
+      "started_at": "2026-10-17T14:21:04.020610Z",
+      "duration_ms": 119
+    }
+  ],
+  "cleanup": {
+    "succeeded": true,
+    "sandboxes_removed": [
+      "agentenv-run_01m553sd4544g93jv9d3ahp8e4-agent",
+      "agentenv-run_01m553sd4544g93jv9d3ahp8e4-grader"
+    ],
+    "errors": []
+  },
+  "created_at": "2026-10-17T14:20:54.792915Z",
+  "finished_at": "2026-10-17T14:21:04.139897Z",
+  "duration_ms": 9347
+}

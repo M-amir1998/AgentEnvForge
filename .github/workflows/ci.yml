@@ -59,6 +59,10 @@ jobs:
       - run: uv sync --locked
       - run: uv run agentenv doctor
       - run: uv run pytest tests/integration tests/e2e -m docker
+      - name: Failure-isolation benchmark (deterministic agents, expected outcomes)
+        run: |
+          uv run agentenv experiment run benchmarks/failure-isolation/experiment.yaml --output "$RUNNER_TEMP/failure-isolation"
+          uv run python benchmarks/check_failure_isolation.py "$RUNNER_TEMP/failure-isolation"
       - name: No orphaned sandboxes
         run: test -z "$(docker ps -aq --filter label=io.agentenvforge.run-id)"
 
@@ -75,6 +79,7 @@ jobs:
           uv pip install --python /tmp/smoke dist/*.whl
           /tmp/smoke/bin/agentenv version
           /tmp/smoke/bin/agentenv task validate examples/basic/task.yaml
+          /tmp/smoke/bin/agentenv experiment validate benchmarks/infrastructure/experiment.yaml
       - uses: actions/upload-artifact@v4
         with:
           name: dist
