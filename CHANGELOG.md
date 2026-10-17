@@ -30,8 +30,13 @@ All notable changes are documented here. The format follows
     (optional `plots` extra, matplotlib), manifest and environment, optional per-run
     evidence. Every exported path is sanitised.
 - Benchmarks (`benchmarks/`): infrastructure scaling (workers 1/2/4), failure isolation
-  with an expectation checker (also run in CI), and tiny local Ollama models on CPU, with
-  committed, sanitised results.
+  with an expectation checker (also run in CI), hosted Claude models, and tiny local Ollama
+  models on CPU (stopped early), with committed, sanitised results.
+- Claude Code agent example (`examples/agents/claude-code`): hosted Claude models (Haiku,
+  Sonnet, Opus) run through `claude -p` with every built-in tool disabled, acting only
+  through the sandbox via a per-run MCP server on 127.0.0.1; isolated from the user's
+  Claude Code configuration, killed when the run's budget ends or the run is cancelled,
+  optional usage guard, token-free preflight that records no account details.
 - Medium example task `examples/lru-cache`. Oracle, failing, sleeper and crasher test
   agents. An Ollama spec for qwen2.5-coder 0.5b.
 - Ollama agent: preflight (server, model, digest), per-run seeds, generation timings,
@@ -60,6 +65,11 @@ All notable changes are documented here. The format follows
   breaks a run.
 - `agentenv run` passes secrets of every adapter type to redaction, and prints
   manual-agent instructions without interpreting them as markup.
+- Exported JSON evidence is sanitised value by value: JSON-escaped Windows paths
+  (`C:\\Users\\...`) and paths turned into directory names (`C--Users-...`) no longer
+  survive in shared result directories.
+- Reports describe repetitions with identical patches as "identical repetitions" instead of
+  calling the agent deterministic (a sampled model can converge on the same fix).
 - Sandboxes are now identified by the run-id label. Images built by AgentEnvForge no longer
   carry the container `managed` label, which Docker copied onto unrelated containers started
   from those images, so `agentenv cleanup` could have removed them.

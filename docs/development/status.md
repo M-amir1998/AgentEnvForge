@@ -25,13 +25,16 @@ Last updated: 2026-10-17 (v0.1.0.dev0, Milestone 8: batch experiments, on branch
   owner-aware orphan cleanup.
 - Experiment statistics ([ADR-0009](../adr/0009-experiment-statistics.md)) and the results
   directory: JSON, CSV, Markdown report, headless plots, path sanitisation, regeneration.
-- Benchmarks: scaling, failure isolation (also in CI) and tiny local models, with committed
-  results ([benchmarks](../../benchmarks/README.md)).
+- Benchmarks: scaling, failure isolation (also in CI), hosted Claude models and tiny local
+  models (stopped early), with committed results ([benchmarks](../../benchmarks/README.md)).
 - Example tasks: `examples/basic` (hard, three bugs), `examples/lru-cache` (medium, two bugs)
   and `examples/off-by-one` (easy), each with hidden tests and a reference patch; oracle,
   failing, sleeper and crasher test agents.
 - Real LLM agent example on local Ollama models (`examples/agents/ollama`, experimental);
   python adapters loadable from a spec-relative `path`; `--agent-timeout` override.
+- Claude Code agent example for hosted Claude models (`examples/agents/claude-code`,
+  experimental): sandbox-only tools over a per-run MCP server, isolation from the user's
+  Claude Code configuration, usage guard.
 - First experiment with real models: `docs/experiments/2026-10-small-local-models.md`.
 - 188 tests (unit, Docker integration, e2e). Strict mypy. Ruff.
 
@@ -63,8 +66,9 @@ interrupted experiments, `agentenv reproduce`.
 - Starting a sandbox cannot be cancelled mid-way; it is bounded by the start timeout.
 - Image tags of prebuilt images are resolved from the local cache if present, without re-pulling.
 - Requires GNU `timeout` and `sleep` in task images.
-- The Ollama agent results are small-sample: 3 seeded repetitions per model and task
-  (see the local-ollama benchmark report); intervals are wide.
+- Model results are small-sample: 3 repetitions on 3 example tasks. The local-ollama
+  benchmark was stopped after 8 of 45 runs (CPU inference too slow on the development
+  laptop). Claude Code takes no seed, so its repetitions cannot be reproduced exactly.
 - `test_hanging_agent_times_out_and_is_cleaned_up` failed once without a reproducible cause
   ([diagnosis](flaky-test-diagnosis.md)).
 
