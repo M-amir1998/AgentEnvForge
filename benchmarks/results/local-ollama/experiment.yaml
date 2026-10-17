@@ -1,0 +1,56 @@
+# Local LLM benchmark: tiny open-weight coding models on CPU, served by Ollama.
+#
+#   ollama pull qwen2.5-coder:0.5b && ollama pull qwen2.5-coder:1.5b && ollama pull qwen2.5-coder:3b
+#   agentenv experiment validate benchmarks/local-ollama/experiment.yaml --preflight
+#   agentenv experiment run benchmarks/local-ollama/experiment.yaml --overwrite
+#
+# Subjects: three sizes of the same model family, with identical agent settings. The oracle
+# (reference) and noop (baseline) are NOT AI agents: they validate the tasks (every oracle
+# run must pass, every noop run must fail) and are excluded from comparisons.
+#
+# Tasks, by the number of interacting bugs to find and fix:
+#   easy    moving-average-off-by-one   one off-by-one error
+#   medium  lru-cache-recency           two related recency/eviction bugs
+#   hard    ledger-transaction-rollback three bugs (shallow snapshot, wrong snapshot
+#                                       restored, exception swallowed)
+#
+# Settings: the model spec files, with the same overrides for every size: temperature 0.2
+# with the experiment's per-repetition seeds (0, 1, 2), so repetitions differ but each run
+# is reproducible on the same hardware and Ollama version; at most 20 model calls; 8k context.
+# workers: 1, because the agent loops and the model all compete for this machine's CPU.
+schema_version: "1"
+id: local-ollama
+name: Tiny local coding models (Ollama, CPU only)
+description: >
+  qwen2.5-coder 0.5b, 1.5b and 3b (Q4_K_M, CPU only) on an easy, a medium and a hard bug-fix
+  task, three seeded repetitions each, validated by an oracle and a noop baseline.
+tags: [benchmark, llm, ollama, cpu]
+tasks:
+  - ../../examples/off-by-one/task.yaml
+  - ../../examples/lru-cache/task.yaml
+  - ../../examples/basic/task.yaml
+agents:
+  - id: qwen2.5-coder-0.5b
+    spec: ../../examples/agents/ollama/qwen2.5-coder-0.5b.yaml
+    options: {temperature: 0.2, max_steps: 20, num_ctx: 8192}
+    agent_timeout_seconds: 600
+  - id: qwen2.5-coder-1.5b
+    spec: ../../examples/agents/ollama/qwen2.5-coder-1.5b.yaml
+    options: {temperature: 0.2, max_steps: 20, num_ctx: 8192}
+    agent_timeout_seconds: 600
+  - id: qwen2.5-coder-3b
+    spec: ../../examples/agents/ollama/qwen2.5-coder-3b.yaml
+    options: {temperature: 0.2, max_steps: 20, num_ctx: 8192}
+    agent_timeout_seconds: 600
+  - id: oracle
+    role: reference
+    spec: ../../examples/agents/oracle/oracle.yaml
+  - id: noop
+    role: baseline
+    agent: {type: noop}
+repetitions: 3
+execution:
+  workers: 1
+  base_seed: 0
+output:
+  directory: ../results/local-ollama

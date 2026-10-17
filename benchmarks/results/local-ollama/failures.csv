@@ -1,0 +1,3 @@
+outcome,reason,stage,count
+cancelled,cancelled,running_agent,1
+failed,graded_failure,,6

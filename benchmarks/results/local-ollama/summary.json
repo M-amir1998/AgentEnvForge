@@ -1,0 +1,848 @@
+{
+  "summary_version": 1,
+  "experiment_id": "exp_01m53d2hafgg6143v55h2fdcep",
+  "spec_id": "local-ollama",
+  "name": "Tiny local coding models (Ollama, CPU only)",
+  "status": "cancelled",
+  "partial": true,
+  "generated_at": "2026-10-17T14:30:05.811856Z",
+  "workers": 1,
+  "repetitions": 3,
+  "counts": {
+    "passed": 1,
+    "failed": 6,
+    "agent_timeout": 0,
+    "solution_timeout": 0,
+    "agent_error": 0,
+    "post_agent_error": 0,
+    "infrastructure_error": 0,
+    "agent_unavailable": 0,
+    "cancelled": 1,
+    "not_started": 37,
+    "incomplete": 0
+  },
+  "running_seconds": 930.334,
+  "runs_per_hour": 30.96,
+  "agents": [
+    {
+      "agent_id": "qwen2.5-coder-0.5b",
+      "role": "subject",
+      "adapter": "ollama:qwen2.5-coder:0.5b",
+      "model": "qwen2.5-coder:0.5b",
+      "counts": {
+        "passed": 0,
+        "failed": 2,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 7,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 2,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.6576197724933468,
+        "confidence": 0.95,
+        "note": "pooled over this experiment's tasks (conditional on this task mix)"
+      },
+      "task_mean_success": null,
+      "tasks_without_scored_runs": [
+        "ledger-transaction-rollback"
+      ],
+      "deterministic": false,
+      "pass_at_k": {
+        "k": 3,
+        "value": null,
+        "note": "fewer than 3 scored runs on: moving-average-off-by-one, lru-cache-recency, ledger-transaction-rollback"
+      },
+      "run_seconds": {
+        "count": 2,
+        "mean": 141.493,
+        "median": 141.493,
+        "minimum": 134.737,
+        "maximum": 148.248,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_seconds": {
+        "count": 2,
+        "mean": 139.278,
+        "median": 139.278,
+        "minimum": 132.643,
+        "maximum": 145.912,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_budget_seconds": [
+        600
+      ],
+      "tokens": {
+        "prompt_tokens": 113334,
+        "completion_tokens": 1698,
+        "generation_tokens_per_second": 25.84
+      }
+    },
+    {
+      "agent_id": "qwen2.5-coder-1.5b",
+      "role": "subject",
+      "adapter": "ollama:qwen2.5-coder:1.5b",
+      "model": "qwen2.5-coder:1.5b",
+      "counts": {
+        "passed": 0,
+        "failed": 1,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 1,
+        "not_started": 7,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 1,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.7934506856227626,
+        "confidence": 0.95,
+        "note": "pooled over this experiment's tasks (conditional on this task mix)"
+      },
+      "task_mean_success": null,
+      "tasks_without_scored_runs": [
+        "lru-cache-recency",
+        "ledger-transaction-rollback"
+      ],
+      "deterministic": false,
+      "pass_at_k": {
+        "k": 3,
+        "value": null,
+        "note": "fewer than 3 scored runs on: moving-average-off-by-one, lru-cache-recency, ledger-transaction-rollback"
+      },
+      "run_seconds": {
+        "count": 1,
+        "mean": 255.752,
+        "median": 255.752,
+        "minimum": 255.752,
+        "maximum": 255.752,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_seconds": {
+        "count": 1,
+        "mean": 253.526,
+        "median": 253.526,
+        "minimum": 253.526,
+        "maximum": 253.526,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_budget_seconds": [
+        600
+      ],
+      "tokens": {
+        "prompt_tokens": 51161,
+        "completion_tokens": 1829,
+        "generation_tokens_per_second": 12.37
+      }
+    },
+    {
+      "agent_id": "qwen2.5-coder-3b",
+      "role": "subject",
+      "adapter": "ollama:qwen2.5-coder:3b",
+      "model": "qwen2.5-coder:3b",
+      "counts": {
+        "passed": 0,
+        "failed": 1,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 8,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 1,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.7934506856227626,
+        "confidence": 0.95,
+        "note": "pooled over this experiment's tasks (conditional on this task mix)"
+      },
+      "task_mean_success": null,
+      "tasks_without_scored_runs": [
+        "lru-cache-recency",
+        "ledger-transaction-rollback"
+      ],
+      "deterministic": false,
+      "pass_at_k": {
+        "k": 3,
+        "value": null,
+        "note": "fewer than 3 scored runs on: moving-average-off-by-one, lru-cache-recency, ledger-transaction-rollback"
+      },
+      "run_seconds": {
+        "count": 1,
+        "mean": 281.107,
+        "median": 281.107,
+        "minimum": 281.107,
+        "maximum": 281.107,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_seconds": {
+        "count": 1,
+        "mean": 278.835,
+        "median": 278.835,
+        "minimum": 278.835,
+        "maximum": 278.835,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_budget_seconds": [
+        600
+      ],
+      "tokens": {
+        "prompt_tokens": 43115,
+        "completion_tokens": 1033,
+        "generation_tokens_per_second": 7.66
+      }
+    },
+    {
+      "agent_id": "oracle",
+      "role": "reference",
+      "adapter": "command:oracle",
+      "model": null,
+      "counts": {
+        "passed": 1,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 8,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 1,
+        "trials": 1,
+        "estimate": 1.0,
+        "ci_low": 0.20654931437723745,
+        "ci_high": 1.0,
+        "confidence": 0.95,
+        "note": "pooled over this experiment's tasks (conditional on this task mix)"
+      },
+      "task_mean_success": null,
+      "tasks_without_scored_runs": [
+        "lru-cache-recency",
+        "ledger-transaction-rollback"
+      ],
+      "deterministic": false,
+      "pass_at_k": {
+        "k": 3,
+        "value": null,
+        "note": "fewer than 3 scored runs on: moving-average-off-by-one, lru-cache-recency, ledger-transaction-rollback"
+      },
+      "run_seconds": {
+        "count": 1,
+        "mean": 2.386,
+        "median": 2.386,
+        "minimum": 2.386,
+        "maximum": 2.386,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_seconds": {
+        "count": 1,
+        "mean": 0.118,
+        "median": 0.118,
+        "minimum": 0.118,
+        "maximum": 0.118,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_budget_seconds": [],
+      "tokens": null
+    },
+    {
+      "agent_id": "noop",
+      "role": "baseline",
+      "adapter": "noop",
+      "model": null,
+      "counts": {
+        "passed": 0,
+        "failed": 2,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 7,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 2,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.6576197724933468,
+        "confidence": 0.95,
+        "note": "pooled over this experiment's tasks (conditional on this task mix)"
+      },
+      "task_mean_success": null,
+      "tasks_without_scored_runs": [
+        "ledger-transaction-rollback"
+      ],
+      "deterministic": false,
+      "pass_at_k": {
+        "k": 3,
+        "value": null,
+        "note": "fewer than 3 scored runs on: moving-average-off-by-one, lru-cache-recency, ledger-transaction-rollback"
+      },
+      "run_seconds": {
+        "count": 2,
+        "mean": 2.267,
+        "median": 2.267,
+        "minimum": 2.181,
+        "maximum": 2.353,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_seconds": {
+        "count": 2,
+        "mean": 0.004,
+        "median": 0.004,
+        "minimum": 0.002,
+        "maximum": 0.005,
+        "p95": null,
+        "censored": 0
+      },
+      "agent_budget_seconds": [],
+      "tokens": null
+    }
+  ],
+  "tasks": [
+    {
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 0,
+        "failed": 3,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 6,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 3,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.5614970317550454,
+        "confidence": 0.95,
+        "note": "pooled over subject agents"
+      },
+      "reference_passed_all": true,
+      "baseline_failed_all": true
+    },
+    {
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 0,
+        "failed": 1,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 1,
+        "not_started": 7,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 1,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.7934506856227626,
+        "confidence": 0.95,
+        "note": "pooled over subject agents"
+      },
+      "reference_passed_all": null,
+      "baseline_failed_all": true
+    },
+    {
+      "task_id": "ledger-transaction-rollback",
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 9,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 0,
+        "estimate": null,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "no scored runs"
+      },
+      "reference_passed_all": null,
+      "baseline_failed_all": null
+    }
+  ],
+  "cells": [
+    {
+      "agent_id": "qwen2.5-coder-0.5b",
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 0,
+        "failed": 1,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 2,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 1,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.7934506856227626,
+        "confidence": 0.95,
+        "note": null
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "qwen2.5-coder-0.5b",
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 0,
+        "failed": 1,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 2,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 1,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.7934506856227626,
+        "confidence": 0.95,
+        "note": null
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "qwen2.5-coder-0.5b",
+      "task_id": "ledger-transaction-rollback",
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 3,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 0,
+        "estimate": null,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "no scored runs"
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "qwen2.5-coder-1.5b",
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 0,
+        "failed": 1,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 2,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 1,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.7934506856227626,
+        "confidence": 0.95,
+        "note": null
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "qwen2.5-coder-1.5b",
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 1,
+        "not_started": 2,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 0,
+        "estimate": null,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "no scored runs"
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "qwen2.5-coder-1.5b",
+      "task_id": "ledger-transaction-rollback",
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 3,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 0,
+        "estimate": null,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "no scored runs"
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "qwen2.5-coder-3b",
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 0,
+        "failed": 1,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 2,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 1,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.7934506856227626,
+        "confidence": 0.95,
+        "note": null
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "qwen2.5-coder-3b",
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 3,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 0,
+        "estimate": null,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "no scored runs"
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "qwen2.5-coder-3b",
+      "task_id": "ledger-transaction-rollback",
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 3,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 0,
+        "estimate": null,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "no scored runs"
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "oracle",
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 1,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 2,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 1,
+        "trials": 1,
+        "estimate": 1.0,
+        "ci_low": 0.20654931437723745,
+        "ci_high": 1.0,
+        "confidence": 0.95,
+        "note": null
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "oracle",
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 3,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 0,
+        "estimate": null,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "no scored runs"
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "oracle",
+      "task_id": "ledger-transaction-rollback",
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 3,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 0,
+        "estimate": null,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "no scored runs"
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "noop",
+      "task_id": "moving-average-off-by-one",
+      "counts": {
+        "passed": 0,
+        "failed": 1,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 2,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 1,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.7934506856227626,
+        "confidence": 0.95,
+        "note": null
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "noop",
+      "task_id": "lru-cache-recency",
+      "counts": {
+        "passed": 0,
+        "failed": 1,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 2,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 1,
+        "estimate": 0.0,
+        "ci_low": 0.0,
+        "ci_high": 0.7934506856227626,
+        "confidence": 0.95,
+        "note": null
+      },
+      "identical_repetitions": false
+    },
+    {
+      "agent_id": "noop",
+      "task_id": "ledger-transaction-rollback",
+      "counts": {
+        "passed": 0,
+        "failed": 0,
+        "agent_timeout": 0,
+        "solution_timeout": 0,
+        "agent_error": 0,
+        "post_agent_error": 0,
+        "infrastructure_error": 0,
+        "agent_unavailable": 0,
+        "cancelled": 0,
+        "not_started": 3,
+        "incomplete": 0
+      },
+      "success": {
+        "successes": 0,
+        "trials": 0,
+        "estimate": null,
+        "ci_low": null,
+        "ci_high": null,
+        "confidence": 0.95,
+        "note": "no scored runs"
+      },
+      "identical_repetitions": false
+    }
+  ],
+  "failures": [
+    {
+      "outcome": "cancelled",
+      "reason": "cancelled",
+      "stage": "running_agent",
+      "count": 1
+    },
+    {
+      "outcome": "failed",
+      "reason": "graded_failure",
+      "stage": null,
+      "count": 6
+    }
+  ],
+  "warnings": [
+    "partial experiment: 37 runs not started and 0 incomplete; rates cover only the runs that finished"
+  ],
+  "results_valid": false,
+  "invariant_violations": []
+}

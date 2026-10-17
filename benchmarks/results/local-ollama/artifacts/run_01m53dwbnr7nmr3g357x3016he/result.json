@@ -1,0 +1,65 @@
+{
+  "run_id": "run_01m53dwbnr7nmr3g357x3016he",
+  "task_id": "lru-cache-recency",
+  "status": "cancelled",
+  "passed": null,
+  "score": null,
+  "failure": {
+    "reason": "cancelled",
+    "stage": "running_agent",
+    "message": "cancelled: received SIGBREAK",
+    "error_type": "RunCancelledError",
+    "details": {
+      "reason": "received SIGBREAK"
+    }
+  },
+  "agent": null,
+  "grade": null,
+  "stage_timings": [
+    {
+      "status": "created",
+      "started_at": "2026-10-16T22:38:48.508799Z",
+      "duration_ms": 1
+    },
+    {
+      "status": "validating",
+      "started_at": "2026-10-16T22:38:48.509884Z",
+      "duration_ms": 26
+    },
+    {
+      "status": "preparing_source",
+      "started_at": "2026-10-16T22:38:48.535736Z",
+      "duration_ms": 8
+    },
+    {
+      "status": "building_sandbox",
+      "started_at": "2026-10-16T22:38:48.543861Z",
+      "duration_ms": 32
+    },
+    {
+      "status": "starting_sandbox",
+      "started_at": "2026-10-16T22:38:48.576225Z",
+      "duration_ms": 266
+    },
+    {
+      "status": "running_agent",
+      "started_at": "2026-10-16T22:38:48.842657Z",
+      "duration_ms": 103301
+    },
+    {
+      "status": "cleaning_up",
+      "started_at": "2026-10-16T22:40:32.143846Z",
+      "duration_ms": 239
+    }
+  ],
+  "cleanup": {
+    "succeeded": true,
+    "sandboxes_removed": [
+      "agentenv-run_01m53dwbnr7nmr3g357x3016he-agent"
+    ],
+    "errors": []
+  },
+  "created_at": "2026-10-16T22:38:48.508799Z",
+  "finished_at": "2026-10-16T22:40:32.382800Z",
+  "duration_ms": 103874
+}

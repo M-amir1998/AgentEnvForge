@@ -1,0 +1,47 @@
+{
+  "grader": "composite",
+  "grader_type": "composite",
+  "passed": false,
+  "score": 0.214285,
+  "tests_passed": 3,
+  "tests_failed": 5,
+  "tests_errored": 0,
+  "tests_skipped": 0,
+  "duration_ms": 1344,
+  "summary": "0/2 graders passed",
+  "details": {},
+  "components": [
+    {
+      "grader": "hidden-tests",
+      "grader_type": "pytest",
+      "passed": false,
+      "score": 0.428571,
+      "tests_passed": 3,
+      "tests_failed": 4,
+      "tests_errored": 0,
+      "tests_skipped": 0,
+      "duration_ms": 704,
+      "summary": "3/7 tests passed",
+      "details": {
+        "exit_code": 1
+      },
+      "components": []
+    },
+    {
+      "grader": "visible-tests",
+      "grader_type": "pytest",
+      "passed": false,
+      "score": 0.0,
+      "tests_passed": 0,
+      "tests_failed": 1,
+      "tests_errored": 0,
+      "tests_skipped": 0,
+      "duration_ms": 640,
+      "summary": "0/1 tests passed",
+      "details": {
+        "exit_code": 1
+      },
+      "components": []
+    }
+  ]
+}
