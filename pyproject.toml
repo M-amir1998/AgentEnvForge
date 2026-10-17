@@ -103,7 +103,7 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "tests/**" = ["S101", "S105", "S108", "PLR2004", "T20", "PLC0415"]
 "examples/**" = ["T20", "S101", "INP001", "N818", "S603", "BLE001"]  # incl. buggy code
-"scripts/**" = ["T20"]
+"scripts/**" = ["T20", "RUF001"]  # command-line scripts; typographic × in chart text
 "benchmarks/**" = ["T20", "INP001"]  # command-line scripts
 "src/agentenvforge/cli/**" = ["PLR0912", "PLR0917", "B008"]  # Typer: one parameter per option
 

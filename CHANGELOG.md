@@ -45,6 +45,9 @@ All notable changes are documented here. The format follows
   has exited. `agentenv run` checks an agent's readiness before building a sandbox.
 - ADR-0008 (local batch execution), ADR-0009 (experiment statistics), architecture page
   and tutorial for experiments.
+- README redesigned: banner, terminal demo, Mermaid architecture diagrams, and light/dark
+  result charts generated from the committed benchmark results
+  (`scripts/readme_figures.py`).
 - Real LLM coding agent on local Ollama models (`examples/agents/ollama`): host-side tool
   loop, native and text tool-call parsing, transcripts and token statistics; plus specs for
   qwen2.5-coder 1.5b/3b/7b and a first experiment report.
