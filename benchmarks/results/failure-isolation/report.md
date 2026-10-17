@@ -11,7 +11,7 @@ Deterministic agents with known outcomes (pass, graded failure, agent timeout, a
 | Workers | 2 |
 | Running time | 32.1 s (2243.2 runs/hour) |
 | AgentEnvForge | 0.1.0.dev0 |
-| Generated | 2026-10-16 22:24 UTC |
+| Generated | 2026-10-17 14:30 UTC |
 
 ## Validity
 
@@ -55,9 +55,9 @@ Success = passed / scored runs. Intervals are 95% Wilson score intervals, pooled
 
 | Agent | Role | Model / adapter | Scored | Success [95% CI] | Mean over tasks | pass@k | Timeouts | Excluded |
 |---|---|---|---|---|---|---|---|---|
-| `oracle` | reference | `command:oracle` | 4 | 4/4 = 100% (deterministic) | 100% | - (deterministic agent: pass@k equals pass@1) | 0 | 0 |
-| `noop` | baseline | `noop` | 4 | 0/4 = 0% (deterministic) | 0% | - (deterministic agent: pass@k equals pass@1) | 0 | 0 |
-| `failing` | subject | `command:failing` | 4 | 0/4 = 0% (deterministic) | 0% | - (deterministic agent: pass@k equals pass@1) | 0 | 0 |
+| `oracle` | reference | `command:oracle` | 4 | 4/4 = 100% (identical repetitions) | 100% | - (identical repetitions: pass@k equals pass@1) | 0 | 0 |
+| `noop` | baseline | `noop` | 4 | 0/4 = 0% (identical repetitions) | 0% | - (identical repetitions: pass@k equals pass@1) | 0 | 0 |
+| `failing` | subject | `command:failing` | 4 | 0/4 = 0% (identical repetitions) | 0% | - (identical repetitions: pass@k equals pass@1) | 0 | 0 |
 | `sleeper` | subject | `command:sleeper` | 4 | 0/4 = 0% [0%, 49%] | 0% | pass@2 = 0.00 | 4 | 0 |
 | `crasher` | subject | `crasher` | 4 | 0/4 = 0% [0%, 49%] | 0% | pass@2 = 0.00 | 0 | 0 |
 
@@ -118,7 +118,7 @@ Seconds over scored runs. `>=`: some runs hit their time budget, so the value is
 
 - A run is **scored** once its agent started (unless cancelled). Failures before the agent started, sandbox start failures, cancellations and unavailable model servers are excluded from success rates and reported separately.
 - Failures after the agent started that prevent grading (e.g. the solution breaks the test configuration) count as failures (`post_agent_error`).
-- Cells whose repetitions produced the same outcome *and* the same patch are marked identical; deterministic agents get no interval and no pass@k.
+- Cells whose repetitions produced the same outcome *and* the same patch are marked identical and count as one observation (no interval, no pass@k): a deterministic agent looks like this, and so does a sampled one that converges on the same patch.
 - pass@k uses the unbiased estimator of Chen et al. (2021), averaged over tasks.
 - p95 is reported only for at least 20 runs.
 

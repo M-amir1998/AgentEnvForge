@@ -5,7 +5,7 @@
   "name": "Failure isolation under concurrency",
   "status": "completed",
   "partial": false,
-  "generated_at": "2026-10-16T22:24:23.123548Z",
+  "generated_at": "2026-10-17T14:30:03.073804Z",
   "workers": 2,
   "repetitions": 2,
   "counts": {
@@ -49,7 +49,7 @@
         "ci_low": null,
         "ci_high": null,
         "confidence": 0.95,
-        "note": "deterministic: repetitions were identical, so no interval"
+        "note": "identical repetitions in every repeated task (same outcome and patch): counted as one observation per task, so no interval"
       },
       "task_mean_success": 1.0,
       "tasks_without_scored_runs": [],
@@ -57,7 +57,7 @@
       "pass_at_k": {
         "k": 2,
         "value": null,
-        "note": "deterministic agent: pass@k equals pass@1"
+        "note": "identical repetitions: pass@k equals pass@1"
       },
       "run_seconds": {
         "count": 4,
@@ -105,7 +105,7 @@
         "ci_low": null,
         "ci_high": null,
         "confidence": 0.95,
-        "note": "deterministic: repetitions were identical, so no interval"
+        "note": "identical repetitions in every repeated task (same outcome and patch): counted as one observation per task, so no interval"
       },
       "task_mean_success": 0.0,
       "tasks_without_scored_runs": [],
@@ -113,7 +113,7 @@
       "pass_at_k": {
         "k": 2,
         "value": null,
-        "note": "deterministic agent: pass@k equals pass@1"
+        "note": "identical repetitions: pass@k equals pass@1"
       },
       "run_seconds": {
         "count": 4,
@@ -161,7 +161,7 @@
         "ci_low": null,
         "ci_high": null,
         "confidence": 0.95,
-        "note": "deterministic: repetitions were identical, so no interval"
+        "note": "identical repetitions in every repeated task (same outcome and patch): counted as one observation per task, so no interval"
       },
       "task_mean_success": 0.0,
       "tasks_without_scored_runs": [],
@@ -169,7 +169,7 @@
       "pass_at_k": {
         "k": 2,
         "value": null,
-        "note": "deterministic agent: pass@k equals pass@1"
+        "note": "identical repetitions: pass@k equals pass@1"
       },
       "run_seconds": {
         "count": 4,
